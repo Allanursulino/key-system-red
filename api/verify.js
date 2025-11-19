@@ -5,13 +5,14 @@ const verificationDB = new Map();
 const userActivityDB = new Map();
 const fraudDetectionDB = new Map();
 
-// Configurações ATUALIZADAS - MAIS PERMISSIVAS
+// Configurações ATUALIZADAS
 const CONFIG = {
     MAX_KEYS_PER_IP: 1,
     KEY_EXPIRY_HOURS: 24,
-    COOLDOWN_MINUTES: 5, // Reduzido de 30 para 5 minutos
-    MAX_ATTEMPTS_PER_HOUR: 20, // Aumentado de 5 para 20
-    FRAUD_THRESHOLD: 10 // Aumentado de 3 para 10
+    COOLDOWN_MINUTES: 5,
+    MAX_ATTEMPTS_PER_HOUR: 20,
+    FRAUD_THRESHOLD: 10,
+    WEBHOOK_URL: 'https://discord.com/api/webhooks/1426304674595737734/Ii0NoDtSTbdLeQP-SZ4xwgc4m99mrOXTrPv_o2Wugqmg0nuM5fOLw9x1llRca4D5QCUH'
 };
 
 export default async function handler(req, res) {
@@ -30,11 +31,9 @@ export default async function handler(req, res) {
         
         console.log('=== 🔐 VERIFICATION ===');
         console.log('IP:', clientIP);
-        console.log('User Agent:', userAgent.length);
-        console.log('Referer:', referer);
         console.log('Query Params:', req.query);
 
-        // ✅ ANTI-FRAUDE MAIS PERMISSIVO
+        // ✅ ANTI-FRAUDE
         const fraudCheck = await performFraudCheck(clientIP, userAgent, referer, req.query);
         
         if (!fraudCheck.allowed) {
@@ -47,10 +46,19 @@ export default async function handler(req, res) {
             });
         }
 
-        // ✅ VERIFICAR SE JÁ EXISTE KEY ATIVA PARA ESTE IP
+        // ✅ VERIFICAR SE JÁ EXISTE KEY ATIVA
         const existingKey = await getActiveKeyForIP(clientIP);
         if (existingKey) {
             console.log('ℹ️ Returning existing key for IP:', clientIP);
+            
+            // ✅ WEBHOOK PARA KEY EXISTENTE
+            await sendWebhookLog({
+                type: 'EXISTING_KEY_USED',
+                ip: clientIP,
+                key: existingKey.key,
+                timestamp: new Date().toISOString()
+            });
+            
             return res.status(200).json({
                 success: true,
                 key: existingKey.key,
@@ -63,6 +71,15 @@ export default async function handler(req, res) {
         // ✅ GERAR NOVA KEY
         const keyData = generateSecureKey(clientIP, userAgent);
         console.log('✅ NEW KEY GENERATED:', keyData.key);
+
+        // ✅ ENVIAR WEBHOOK DA NOVA KEY
+        await sendWebhookLog({
+            type: 'KEY_GENERATED',
+            ip: clientIP,
+            key: keyData.key,
+            timestamp: new Date().toISOString(),
+            userAgent: userAgent.substring(0, 100)
+        });
 
         // ✅ ATUALIZAR ESTATÍSTICAS
         updateUserActivity(clientIP, keyData.key);
@@ -78,6 +95,15 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('❌ Verify API error:', error);
+        
+        // ✅ WEBHOOK PARA ERRO
+        await sendWebhookLog({
+            type: 'SYSTEM_ERROR',
+            ip: req.headers['x-forwarded-for'] || 'unknown',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+        
         res.status(500).json({ 
             success: false, 
             error: 'SYSTEM_ERROR',
@@ -86,14 +112,177 @@ export default async function handler(req, res) {
     }
 }
 
-// ✅ BUSCAR KEY ATIVA EXISTENTE PARA O IP
+// ✅ FUNÇÃO PARA ENVIAR WEBHOOK
+async function sendWebhookLog(data) {
+    try {
+        let embed;
+
+        if (data.type === 'KEY_GENERATED') {
+            embed = {
+                title: "🎉 **NOVA KEY GERADA** - MultiHub Key",
+                color: 0x00ff00, // Verde
+                description: "Uma nova key foi gerada com sucesso!",
+                fields: [
+                    {
+                        name: "🔑 **Key**",
+                        value: `\`\`\`${data.key}\`\`\``,
+                        inline: false
+                    },
+                    {
+                        name: "🌐 **IP**",
+                        value: `\`${data.ip}\``,
+                        inline: true
+                    },
+                    {
+                        name: "⏰ **Expira em**",
+                        value: "**24 horas** ⏳",
+                        inline: true
+                    },
+                    {
+                        name: "📅 **Data**",
+                        value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+                        inline: true
+                    }
+                ],
+                timestamp: new Date().toISOString(),
+                footer: {
+                    text: "MultiHub Key System • LootLabs"
+                },
+                thumbnail: {
+                    url: "https://cdn-icons-png.flaticon.com/512/1005/1005141.png"
+                }
+            };
+        } 
+        else if (data.type === 'EXISTING_KEY_USED') {
+            embed = {
+                title: "🔄 **KEY EXISTENTE REUTILIZADA**",
+                color: 0xffa500, // Laranja
+                description: "Usuário utilizou key existente ativa",
+                fields: [
+                    {
+                        name: "🔑 **Key**",
+                        value: `\`\`\`${data.key}\`\`\``,
+                        inline: false
+                    },
+                    {
+                        name: "🌐 **IP**",
+                        value: `\`${data.ip}\``,
+                        inline: true
+                    },
+                    {
+                        name: "📅 **Data**",
+                        value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+                        inline: true
+                    }
+                ],
+                timestamp: new Date().toISOString(),
+                footer: {
+                    text: "MultiHub Key System • Reutilização"
+                }
+            };
+        }
+        else if (data.type === 'FRAUD_BLOCKED') {
+            embed = {
+                title: "🚫 **TENTATIVA DE FRAUDE BLOQUEADA**",
+                color: 0xff0000, // Vermelho
+                description: "Sistema anti-fraude detectou atividade suspeita",
+                fields: [
+                    {
+                        name: "🌐 **IP**",
+                        value: `\`${data.ip}\``,
+                        inline: true
+                    },
+                    {
+                        name: "📛 **Razão**",
+                        value: `**${data.reason}**`,
+                        inline: true
+                    },
+                    {
+                        name: "🛡️ **Ação**",
+                        value: "**BLOQUEADO AUTOMATICAMENTE** 🔒",
+                        inline: true
+                    }
+                ],
+                timestamp: new Date().toISOString(),
+                footer: {
+                    text: "MultiHub Key System • Anti-Fraud"
+                }
+            };
+        }
+        else if (data.type === 'SYSTEM_ERROR') {
+            embed = {
+                title: "❌ **ERRO NO SISTEMA**",
+                color: 0xff0000,
+                fields: [
+                    {
+                        name: "💻 **Erro**",
+                        value: `\`\`\`${data.error}\`\`\``,
+                        inline: false
+                    },
+                    {
+                        name: "🌐 **IP**",
+                        value: `\`${data.ip}\``,
+                        inline: true
+                    }
+                ],
+                timestamp: new Date().toISOString(),
+                footer: {
+                    text: "MultiHub Key System • Error Log"
+                }
+            };
+        }
+
+        const response = await fetch(CONFIG.WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                embeds: [embed],
+                username: 'MultiHub Key Logger',
+                avatar_url: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png'
+            })
+        });
+
+        if (!response.ok) {
+            console.log('❌ Webhook failed:', response.status);
+        } else {
+            console.log('✅ Webhook sent successfully');
+        }
+    } catch (error) {
+        console.log('❌ Webhook error:', error.message);
+    }
+}
+
+// ✅ FUNÇÃO PARA LOG DE FRAUDES
+async function logFraudAttempt(ip, reason, queryParams) {
+    console.log(`🚫 FRAUD: ${ip} - ${reason}`);
+    
+    // ✅ WEBHOOK PARA FRAUDE
+    await sendWebhookLog({
+        type: 'FRAUD_BLOCKED',
+        ip: ip,
+        reason: reason,
+        timestamp: new Date().toISOString()
+    });
+    
+    if (!fraudDetectionDB.has(ip)) {
+        fraudDetectionDB.set(ip, { score: 1, lastAttempt: Date.now() });
+    } else {
+        const fraudData = fraudDetectionDB.get(ip);
+        fraudData.score++;
+        fraudData.lastAttempt = Date.now();
+    }
+}
+
+// ... (MANTENHA AS OUTRAS FUNÇÕES COMO ESTAVAM)
+
 async function getActiveKeyForIP(ip) {
     if (!userActivityDB.has(ip)) return null;
     
     const userData = userActivityDB.get(ip);
     const now = Date.now();
     
-    // Procurar por keys ativas deste IP
     for (const key of userData.keys) {
         if (verificationDB.has(key)) {
             const keyData = verificationDB.get(key);
@@ -116,8 +305,8 @@ async function performFraudCheck(ip, userAgent, referer, queryParams) {
         withinAttemptLimit: await checkAttemptLimit(ip),
         withinKeyLimit: await checkKeyLimit(ip),
         cooldownRespected: await checkCooldown(ip),
-        validUserAgent: userAgent && userAgent.length > 5, // Reduzido de 10 para 5
-        validReferer: true, // SEMPRE TRUE - Removida verificação de referer
+        validUserAgent: userAgent && userAgent.length > 5,
+        validReferer: true,
         validParams: queryParams.verified === 'true' && queryParams.platform === 'lootlabs'
     };
 
@@ -126,7 +315,6 @@ async function performFraudCheck(ip, userAgent, referer, queryParams) {
     const passedChecks = Object.values(checks).filter(Boolean).length;
     const totalChecks = Object.values(checks).length;
     
-    // ✅ REDUZIDO O LIMITE MÍNIMO DE 5 PARA 3 CHECKS
     if (passedChecks < 3) {
         return {
             allowed: false,
@@ -200,23 +388,11 @@ function updateUserActivity(ip, key) {
     userData.keys.push(key);
     userData.attempts.push(Date.now());
     
-    // Manter apenas os últimos 50 registros para evitar memory leak
     if (userData.attempts.length > 50) {
         userData.attempts = userData.attempts.slice(-50);
     }
     if (userData.keys.length > 10) {
         userData.keys = userData.keys.slice(-10);
-    }
-}
-
-async function logFraudAttempt(ip, reason, queryParams) {
-    console.log(`🚫 FRAUD: ${ip} - ${reason}`);
-    if (!fraudDetectionDB.has(ip)) {
-        fraudDetectionDB.set(ip, { score: 1, lastAttempt: Date.now() });
-    } else {
-        const fraudData = fraudDetectionDB.get(ip);
-        fraudData.score++;
-        fraudData.lastAttempt = Date.now();
     }
 }
 
@@ -264,4 +440,4 @@ setInterval(() => {
     if (expiredCount > 0) {
         console.log(`🧹 Cleaned up ${expiredCount} expired keys`);
     }
-}, 60 * 60 * 1000); // A cada hora
+}, 60 * 60 * 1000);
