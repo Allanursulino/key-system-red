@@ -15,7 +15,6 @@ export default async function handler(req, res) {
         if (!key) {
             return res.status(400).json({
                 success: false,
-                error: 'KEY_REQUIRED',
                 message: 'Key is required'
             });
         }
@@ -25,26 +24,25 @@ export default async function handler(req, res) {
         if (!validation.valid) {
             return res.status(403).json({
                 success: false,
-                error: 'INVALID_KEY',
                 message: validation.reason
             });
         }
 
+        // ✅ FORMATO COMPATÍVEL COM WINDUI
         res.status(200).json({
             success: true,
-            message: 'Key valid',
+            key: key, // Incluir a key na resposta
+            message: 'Key is valid',
             data: {
-                expiresAt: validation.data.expiresAt,
-                uses: validation.data.uses,
-                createdAt: validation.data.createdAt
+                expires: validation.data.expiresAt,
+                created: validation.data.createdAt
             }
         });
 
     } catch (error) {
         res.status(500).json({
             success: false,
-            error: 'SYSTEM_ERROR',
-            message: error.message
+            message: 'System error: ' + error.message
         });
     }
 }
