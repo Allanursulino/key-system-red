@@ -1,8 +1,7 @@
 import crypto from 'crypto';
 
-// SECRET KEY - Só o LootLabs sabe essa chave
-const SECRET_KEY = "LOOTLABS123";
-const approvedIPs = new Map();
+// Armazenar sessões ativas
+const activeSessions = new Map();
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,65 +17,91 @@ export default async function handler(req, res) {
     const userAgent = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || '';
     
-    console.log('🔍 Access attempt from:', clientIP);
-    console.log('📧 Query params:', req.query);
+    console.log('=== 🔍 ACCESS ATTEMPT ===');
+    console.log('IP:', clientIP);
+    console.log('Referer:', referer);
+    console.log('User Agent:', userAgent.substring(0, 80));
+    console.log('Query Params:', req.query);
 
-    // ✅ VERIFICAÇÃO PRINCIPAL: SECRET KEY
-    const hasValidSecret = req.query.secret === SECRET_KEY;
-    const hasApprovedParam = req.query.approved === 'true';
+    // ✅ CAMADA 1: Verificar se veio do LootLabs
+    const isFromLootLabs = referer.includes('lootlabs.gg') || 
+                           userAgent.includes('lootlabs') ||
+                           req.query.source === 'lootlabs';
 
-    // ✅ VERIFICAÇÕES SECUNDÁRIAS
-    const securityChecks = {
-      validSecret: hasValidSecret, // ✅ CHAVE SECRETA CORRETA
-      approvedParam: hasApprovedParam,
-      fromLootLabsReferer: referer.includes('lootlabs.gg'),
-      isApprovedIP: approvedIPs.has(clientIP),
-      isLikelyHuman: !userAgent.includes('bot') && !userAgent.includes('curl')
-    };
+    // ✅ CAMADA 2: Verificar session token
+    const sessionToken = req.query.session;
+    const isValidSession = sessionToken && activeSessions.has(sessionToken);
 
-    console.log('🔐 Security checks:', securityChecks);
+    // ✅ CAMADA 3: Verificar approved IP
+    const isApprovedIP = activeSessions.has(clientIP);
 
-    // ✅ SE TEM A SECRET KEY, APROVA AUTOMATICAMENTE
-    if (securityChecks.validSecret) {
-      console.log('✅ VALID SECRET KEY - Approving access');
+    console.log('🔐 Security Check:');
+    console.log('  - From LootLabs:', isFromLootLabs);
+    console.log('  - Valid Session:', isValidSession);
+    console.log('  - Approved IP:', isApprovedIP);
+
+    // ❌ BLOQUEAR ACESSO DIRETO
+    if (!isFromLootLabs && !isValidSession && !isApprovedIP) {
+      console.log('🚫 BLOCKED: Direct access detected');
       
-      // Marcar IP como aprovado
-      if (!approvedIPs.has(clientIP)) {
-        approvedIPs.set(clientIP, {
-          firstApproved: Date.now(),
-          lastAccess: Date.now(),
-          approvedBy: 'SECRET_KEY'
-        });
-      }
-
-      // ✅ GERAR KEY
-      const key = crypto.randomBytes(12).toString('hex').toUpperCase().match(/.{4}/g).join('-');
-      console.log('🔑 Key generated:', key);
-
-      // 📨 DISCORD WEBHOOK
+      // Webhook Discord para tentativa de acesso direto
       fetch("https://discord.com/api/webhooks/1426304674595737734/Ii0NoDtSTbdLeQP-SZ4xwgc4m99mrOXTrPv_o2Wugqmg0nuM5fOLw9x1llRca4D5QCUH", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           embeds: [{
-            title: "🔑 Key Generated (Secret Valid)",
-            description: `**Key:** ||${key}||\n**IP:** ${clientIP}\n**Method:** Secret Key Validation\n**Time:** ${new Date().toLocaleString()}`,
+            title: "🚫 Blocked Direct Access",
+            description: `**IP:** ${clientIP}\n**Referer:** ${referer || 'None'}\n**Time:** ${new Date().toLocaleString()}`,
             color: 16711680,
             timestamp: new Date().toISOString(),
-            footer: { text: "Key System • Secret Key Protection" }
+            footer: { text: "Security System • Blocked" }
           }]
         })
       }).catch(console.error);
 
-      res.setHeader('Content-Type', 'text/plain');
-      return res.send(key);
+      return res.status(403).send('ACCESS DENIED: Please complete LootLabs verification first. Visit the homepage and click the verification button.');
     }
 
-    // ❌ BLOQUEAR SE NÃO TEM SECRET KEY
-    console.log('🚫 BLOCKED: No valid secret key');
-    console.log('💡 Expected:', SECRET_KEY, 'Received:', req.query.secret);
+    // ✅ APROVAR E GERAR KEY
+    console.log('✅ ACCESS GRANTED - Generating key...');
+
+    // Criar/atualizar sessão
+    if (!activeSessions.has(clientIP)) {
+      activeSessions.set(clientIP, {
+        firstAccess: Date.now(),
+        lastAccess: Date.now(),
+        accessCount: 1,
+        keysGenerated: 1
+      });
+    } else {
+      const session = activeSessions.get(clientIP);
+      session.lastAccess = Date.now();
+      session.accessCount++;
+      session.keysGenerated++;
+    }
+
+    // Gerar key
+    const key = crypto.randomBytes(12).toString('hex').toUpperCase().match(/.{4}/g).join('-');
     
-    res.status(403).send('ACCESS DENIED: Please complete LootLabs tasks first. Visit the homepage and click the button.');
+    console.log('🔑 Key generated:', key);
+
+    // ✅ WEBHOOK SUCESSO
+    fetch("https://discord.com/api/webhooks/1426304674595737734/Ii0NoDtSTbdLeQP-SZ4xwgc4m99mrOXTrPv_o2Wugqmg0nuM5fOLw9x1llRca4D5QCUH", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        embeds: [{
+          title: "✅ Key Generated Successfully",
+          description: `**Key:** ||${key}||\n**IP:** ${clientIP}\n**Source:** ${isFromLootLabs ? 'LootLabs' : isValidSession ? 'Session' : 'Approved IP'}\n**Time:** ${new Date().toLocaleString()}`,
+          color: 65280,
+          timestamp: new Date().toISOString(),
+          footer: { text: "Key System • Verified Access" }
+        }]
+      })
+    }).catch(console.error);
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(key);
 
   } catch (error) {
     console.error('❌ Generate API error:', error);
@@ -84,12 +109,20 @@ export default async function handler(req, res) {
   }
 }
 
-// Limpar IPs antigos
+// Limpar sessões antigas (24 horas)
 setInterval(() => {
   const now = Date.now();
-  for (const [ip, data] of approvedIPs.entries()) {
-    if (now - data.firstApproved > 24 * 60 * 60 * 1000) {
-      approvedIPs.delete(ip);
+  const dayInMs = 24 * 60 * 60 * 1000;
+  let cleaned = 0;
+  
+  for (const [ip, session] of activeSessions.entries()) {
+    if (now - session.firstAccess > dayInMs) {
+      activeSessions.delete(ip);
+      cleaned++;
     }
+  }
+  
+  if (cleaned > 0) {
+    console.log(`🧹 Cleaned ${cleaned} old sessions`);
   }
 }, 60 * 60 * 1000);
