@@ -2,5 +2,11 @@
   "name": "key-system-red",
   "version": "1.0.0",
   "description": "Temporary key system with Discord webhook",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
 }
