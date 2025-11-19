@@ -8,6 +8,7 @@
   ],
   "routes": [
     { "src": "/", "dest": "/index.html" },
+    { "src": "/key", "dest": "/key.html" },
     { "src": "/api/verify", "dest": "/api/verify.js" },
     { "src": "/api/generate", "dest": "/api/generate.js" },
     { "src": "/api/stats", "dest": "/api/stats.js" }

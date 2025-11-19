@@ -31,11 +31,10 @@ export default async function handler(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'Key is valid',
+            message: 'Key valid',
             data: {
                 expiresAt: validation.data.expiresAt,
-                uses: validation.data.uses,
-                timeLeft: Math.max(0, validation.data.expiresAt - Date.now())
+                uses: validation.data.uses
             }
         });
 
