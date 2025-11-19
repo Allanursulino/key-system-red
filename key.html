@@ -1,117 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>YOUR KEY • 24H</title>
-  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-  <style>
-    body {margin:0;background:#000;color:#ff0048;font-family:'Courier New',monospace;overflow:hidden;}
-    #particles-js {position:absolute;width:100%;height:100%;background:#000;}
-    .box {position:relative;z-index:2;text-align:center;padding-top:15vh;}
-    h1 {font-size:55px;text-shadow:0 0 30px #ff0048;}
-    #key {font-size:45px;letter-spacing:10px;background:#111;padding:30px;margin:50px auto;width:700px;border:3px solid #ff0048;box-shadow:0 0 40px #ff0048;border-radius:15px;}
-    button {padding:18px 60px;font-size:26px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;transition:0.3s;}
-    button:hover {background:#ff0048;color:#000;box-shadow:0 0 60px #ff0048;transform:scale(1.05);}
-    .error {color:#ff3333;font-size:24px;margin:30px;}
-    .back-btn {position:absolute;top:20px;left:20px;padding:10px 20px;background:transparent;border:2px solid #ff0048;color:#ff0048;border-radius:8px;cursor:pointer;text-decoration:none;transition:0.3s;}
-    .back-btn:hover {background:#ff0048;color:#000;}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sua Key • BoostKey System</title>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+        .key-container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding-top: 20vh;
+        }
+        
+        .key-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            padding: 50px;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        
+        .key-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #6366f1, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        #key {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 15px;
+            border: 2px solid #6366f1;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        
+        .key-info {
+            color: #94a3b8;
+            margin: 20px 0;
+            font-size: 1.1rem;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(45deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2rem;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 20px 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .copy-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+        }
+        
+        .security-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .countdown {
+            font-size: 1.1rem;
+            color: #f59e0b;
+            margin: 15px 0;
+        }
+    </style>
 </head>
 <body>
-  <div id="particles-js"></div>
-  
-  <a href="/" class="back-btn">← Back to Home</a>
-  
-  <div class="box">
-    <h1>KEY GENERATED</h1>
-    <div id="key">🔒 Verifying access...</div>
-    <button onclick="copyKey()">COPY KEY</button>
-    <p style="margin-top:40px;">Valid for 24 hours only</p>
-    <div id="errorMessage" class="error"></div>
-  </div>
+    <div id="particles-js"></div>
+    
+    <div class="key-container">
+        <div class="key-box">
+            <div class="key-title">
+                <i class="fas fa-key"></i> SUA KEY 24H
+            </div>
+            <div class="key-info">
+                Key gerada via verificação segura • Válida por 24 horas
+            </div>
+            
+            <div id="key">🔄 Gerando sua key...</div>
+            
+            <div class="countdown" id="countdown">
+                ⏰ Expira em: <span id="timer">24:00:00</span>
+            </div>
+            
+            <button class="copy-btn" onclick="copyKey()">
+                <i class="fas fa-copy"></i> COPIAR KEY
+            </button>
+            
+            <div class="security-badge">
+                <i class="fas fa-shield-alt"></i> Protegido por Sistema Anti-Fraude
+            </div>
+            
+            <div style="margin-top: 30px; color: #64748b; font-size: 0.9rem;">
+                🔄 Para uma nova key após 24h, repita o processo de verificação
+            </div>
+        </div>
+    </div>
 
-  <script>
-    // 🔥 PARTÍCULAS IGUAIS AO INDEX.HTML
-    particlesJS("particles-js", {
-      particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: "#ff0048" },
-        shape: { type: "circle" },
-        opacity: { value: 0.7, random: true },
-        size: { value: 4, random: true },
-        line_linked: { 
-          enable: true, 
-          distance: 150, 
-          color: "#ff0048", 
-          opacity: 0.4,
-          width: 2
-        },
-        move: { 
-          enable: true, 
-          speed: 6,
-          direction: "none",
-          random: true,
-          out_mode: "out"
-        }
-      },
-      interactivity: {
-        detect_on: "canvas",
-        events: { 
-          onhover: { enable: true, mode: "repulse" },
-          onclick: { enable: true, mode: "push" }
-        }
-      }
-    });
+    <script>
+        let currentKey = '';
+        let expiryTime = 0;
 
-    let key = "";
-
-    async function generateKey() {
-      try {
-        // Buscar token do localStorage
-        const accessToken = localStorage.getItem('keyAccessToken') || localStorage.getItem('pendingVerification');
-        
-        if (!accessToken) {
-          showError('❌ ACCESS DENIED: Please complete LootLabs tasks first.');
-          return;
-        }
-
-        document.getElementById('key').innerText = '🔄 Verifying access...';
-        
-        const response = await fetch(`/api/generate?token=${accessToken}`);
-        
-        if (response.ok) {
-          key = await response.text();
-          document.getElementById('key').innerText = key;
-          
-          // Limpar tokens após uso
-          localStorage.removeItem('keyAccessToken');
-          localStorage.removeItem('pendingVerification');
-          localStorage.removeItem('tokenExpires');
-          
-        } else {
-          const errorText = await response.text();
-          showError(`❌ ${errorText}`);
-        }
-      } catch (error) {
-        showError('❌ Network error. Please try again from the homepage.');
-      }
-    }
-
-    function showError(message) {
-      document.getElementById('key').style.display = 'none';
-      document.getElementById('errorMessage').innerText = message;
-    }
-
-    function copyKey() {
-      if (key) {
-        navigator.clipboard.writeText(key).then(() => {
-          alert('✅ Key copied to clipboard!');
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 60, density: { enable: true, value_area: 800 } },
+                color: { value: "#6366f1" },
+                shape: { type: "circle" },
+                opacity: { value: 0.3, random: true },
+                size: { value: 3, random: true },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: "#6366f1",
+                    opacity: 0.2,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 1,
+                    direction: "none",
+                    random: true
+                }
+            }
         });
-      }
-    }
 
-    // Gerar key quando a página carrega
-    generateKey();
-  </script>
+        async function generateKey() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const source = urlParams.get('source') || 'direct';
+                
+                const response = await fetch(`/api/verify?verified=true&source=${source}&timestamp=${Date.now()}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentKey = data.key;
+                    expiryTime = data.expiresAt;
+                    
+                    document.getElementById('key').textContent = currentKey;
+                    startCountdown();
+                } else {
+                    showError(data.message || 'Falha na verificação');
+                }
+            } catch (error) {
+                showError('Erro de conexão. Tente novamente.');
+            }
+        }
+
+        function startCountdown() {
+            function updateTimer() {
+                const now = Date.now();
+                const timeLeft = expiryTime - now;
+                
+                if (timeLeft <= 0) {
+                    document.getElementById('timer').textContent = 'EXPIRADA';
+                    document.getElementById('timer').style.color = '#ef4444';
+                    return;
+                }
+                
+                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                document.getElementById('timer').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+
+        function copyKey() {
+            if (currentKey) {
+                navigator.clipboard.writeText(currentKey).then(() => {
+                    alert('✅ Key copiada para a área de transferência!');
+                });
+            } else {
+                alert('⏳ Aguarde a key ser gerada...');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('key').innerHTML = `❌ ${message}`;
+            document.getElementById('key').style.color = '#ef4444';
+        }
+
+        // Iniciar geração da key
+        generateKey();
+    </script>
 </body>
 </html>
