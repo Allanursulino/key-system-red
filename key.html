@@ -10,10 +10,10 @@
     .box {position:relative;z-index:2;text-align:center;padding-top:15vh;}
     h1 {font-size:55px;text-shadow:0 0 30px #ff0048;}
     #key {font-size:45px;letter-spacing:10px;background:#111;padding:30px;margin:50px auto;width:700px;border:3px solid #ff0048;box-shadow:0 0 40px #ff0048;border-radius:15px;}
-    button {padding:18px 60px;font-size:26px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;}
-    button:hover {background:#ff0048;color:#000;box-shadow:0 0 60px #ff0048;}
+    button {padding:18px 60px;font-size:26px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;transition:0.3s;}
+    button:hover {background:#ff0048;color:#000;box-shadow:0 0 60px #ff0048;transform:scale(1.05);}
     .error {color:#ff3333;font-size:24px;margin:30px;}
-    .back-btn {position:absolute;top:20px;left:20px;padding:10px 20px;background:transparent;border:2px solid #ff0048;color:#ff0048;border-radius:8px;cursor:pointer;text-decoration:none;}
+    .back-btn {position:absolute;top:20px;left:20px;padding:10px 20px;background:transparent;border:2px solid #ff0048;color:#ff0048;border-radius:8px;cursor:pointer;text-decoration:none;transition:0.3s;}
     .back-btn:hover {background:#ff0048;color:#000;}
   </style>
 </head>
@@ -31,7 +31,37 @@
   </div>
 
   <script>
-    particlesJS("particles-js", {"particles":{"number":{"value":100},"color":{"value":"#ff0048"},"line_linked":{"enable":true,"color":"#ff0048"}}});
+    // 🔥 PARTÍCULAS IGUAIS AO INDEX.HTML
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: "#ff0048" },
+        shape: { type: "circle" },
+        opacity: { value: 0.7, random: true },
+        size: { value: 4, random: true },
+        line_linked: { 
+          enable: true, 
+          distance: 150, 
+          color: "#ff0048", 
+          opacity: 0.4,
+          width: 2
+        },
+        move: { 
+          enable: true, 
+          speed: 6,
+          direction: "none",
+          random: true,
+          out_mode: "out"
+        }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: { 
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
+        }
+      }
+    });
 
     let key = "";
 

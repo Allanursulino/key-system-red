@@ -1,30 +1,5 @@
 import crypto from 'crypto';
-
-// Importar função de validação do token.js
-const validTokens = new Map();
-
-function validateToken(token) {
-  if (!validTokens.has(token)) {
-    return { valid: false, reason: 'Token not found' };
-  }
-  
-  const tokenData = validTokens.get(token);
-  
-  if (tokenData.used) {
-    return { valid: false, reason: 'Token already used' };
-  }
-  
-  if (Date.now() > tokenData.expires) {
-    validTokens.delete(token);
-    return { valid: false, reason: 'Token expired' };
-  }
-  
-  // Marcar como usado
-  tokenData.used = true;
-  tokenData.usedAt = Date.now();
-  
-  return { valid: true, data: tokenData };
-}
+import { validateToken } from './_tokens.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,15 +11,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('🎯 Generate API called');
+    
     // 🔐 VERIFICAR TOKEN DE ACESSO
     const accessToken = req.query.token;
     const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     
-    console.log('🔍 Access attempt - Token:', accessToken ? accessToken.substring(0, 12) + '...' : 'NONE', 'IP:', clientIP);
+    console.log('📧 Token received:', accessToken ? accessToken.substring(0, 12) + '...' : 'NONE');
 
     // ❌ BLOQUEAR: Sem token
     if (!accessToken) {
-      console.log('🚫 BLOCKED: No access token');
+      console.log('🚫 BLOCKED: No access token provided');
       return res.status(403).send('ACCESS DENIED: Complete LootLabs tasks first');
     }
 
