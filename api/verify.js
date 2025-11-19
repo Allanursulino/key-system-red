@@ -5,13 +5,13 @@ const verificationDB = new Map();
 const userActivityDB = new Map();
 const fraudDetectionDB = new Map();
 
-// Configurações ATUALIZADAS - APENAS 1 KEY POR IP
+// Configurações ATUALIZADAS - MAIS PERMISSIVAS
 const CONFIG = {
-    MAX_KEYS_PER_IP: 1, // MUDADO DE 3 PARA 1
+    MAX_KEYS_PER_IP: 1,
     KEY_EXPIRY_HOURS: 24,
-    COOLDOWN_MINUTES: 30,
-    MAX_ATTEMPTS_PER_HOUR: 5,
-    FRAUD_THRESHOLD: 3
+    COOLDOWN_MINUTES: 5, // Reduzido de 30 para 5 minutos
+    MAX_ATTEMPTS_PER_HOUR: 20, // Aumentado de 5 para 20
+    FRAUD_THRESHOLD: 10 // Aumentado de 3 para 10
 };
 
 export default async function handler(req, res) {
@@ -24,15 +24,17 @@ export default async function handler(req, res) {
     }
 
     try {
-        const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        const userAgent = req.headers['user-agent'] || '';
+        const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+        const userAgent = req.headers['user-agent'] || 'unknown';
         const referer = req.headers['referer'] || '';
         
         console.log('=== 🔐 VERIFICATION ===');
         console.log('IP:', clientIP);
+        console.log('User Agent:', userAgent.length);
         console.log('Referer:', referer);
+        console.log('Query Params:', req.query);
 
-        // ✅ ANTI-FRAUDE
+        // ✅ ANTI-FRAUDE MAIS PERMISSIVO
         const fraudCheck = await performFraudCheck(clientIP, userAgent, referer, req.query);
         
         if (!fraudCheck.allowed) {
@@ -78,12 +80,13 @@ export default async function handler(req, res) {
         console.error('❌ Verify API error:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'SYSTEM_ERROR' 
+            error: 'SYSTEM_ERROR',
+            message: error.message 
         });
     }
 }
 
-// ✅ NOVA FUNÇÃO: Buscar key ativa existente para o IP
+// ✅ BUSCAR KEY ATIVA EXISTENTE PARA O IP
 async function getActiveKeyForIP(ip) {
     if (!userActivityDB.has(ip)) return null;
     
@@ -106,22 +109,28 @@ async function getActiveKeyForIP(ip) {
 }
 
 async function performFraudCheck(ip, userAgent, referer, queryParams) {
+    console.log('🔍 Performing fraud check...');
+    
     const checks = {
         ipNotBanned: !fraudDetectionDB.has(ip) || fraudDetectionDB.get(ip).score < CONFIG.FRAUD_THRESHOLD,
         withinAttemptLimit: await checkAttemptLimit(ip),
         withinKeyLimit: await checkKeyLimit(ip),
         cooldownRespected: await checkCooldown(ip),
-        validUserAgent: userAgent && userAgent.length > 10,
-        validReferer: !referer || referer.includes('lootlabs.gg'),
+        validUserAgent: userAgent && userAgent.length > 5, // Reduzido de 10 para 5
+        validReferer: true, // SEMPRE TRUE - Removida verificação de referer
         validParams: queryParams.verified === 'true' && queryParams.platform === 'lootlabs'
     };
 
+    console.log('📊 Check results:', checks);
+
     const passedChecks = Object.values(checks).filter(Boolean).length;
+    const totalChecks = Object.values(checks).length;
     
-    if (passedChecks < 5) {
+    // ✅ REDUZIDO O LIMITE MÍNIMO DE 5 PARA 3 CHECKS
+    if (passedChecks < 3) {
         return {
             allowed: false,
-            reason: `Failed security checks (${passedChecks}/7)`
+            reason: `Failed security checks (${passedChecks}/${totalChecks}) - Required: 3`
         };
     }
 
@@ -133,7 +142,9 @@ async function checkAttemptLimit(ip) {
     const userData = userActivityDB.get(ip);
     const hourAgo = Date.now() - (60 * 60 * 1000);
     const recentAttempts = userData.attempts.filter(time => time > hourAgo);
-    return recentAttempts.length < CONFIG.MAX_ATTEMPTS_PER_HOUR;
+    const result = recentAttempts.length < CONFIG.MAX_ATTEMPTS_PER_HOUR;
+    console.log(`📈 Attempt check: ${recentAttempts.length}/${CONFIG.MAX_ATTEMPTS_PER_HOUR} - ${result}`);
+    return result;
 }
 
 async function checkKeyLimit(ip) {
@@ -142,16 +153,27 @@ async function checkKeyLimit(ip) {
     const activeKeys = userData.keys.filter(key => 
         verificationDB.has(key) && verificationDB.get(key).expiresAt > Date.now()
     );
-    return activeKeys.length < CONFIG.MAX_KEYS_PER_IP;
+    const result = activeKeys.length < CONFIG.MAX_KEYS_PER_IP;
+    console.log(`🔑 Key limit check: ${activeKeys.length}/${CONFIG.MAX_KEYS_PER_IP} - ${result}`);
+    return result;
 }
 
 async function checkCooldown(ip) {
     if (!userActivityDB.has(ip)) return true;
     const userData = userActivityDB.get(ip);
+    
+    if (userData.keys.length === 0) return true;
+    
     const lastKeyTime = Math.max(...userData.keys.map(key => 
         verificationDB.has(key) ? verificationDB.get(key).createdAt : 0
     ));
-    return Date.now() - lastKeyTime > (CONFIG.COOLDOWN_MINUTES * 60 * 1000);
+    
+    const cooldownTime = CONFIG.COOLDOWN_MINUTES * 60 * 1000;
+    const timeSinceLastKey = Date.now() - lastKeyTime;
+    const result = timeSinceLastKey > cooldownTime;
+    
+    console.log(`⏰ Cooldown check: ${Math.floor(timeSinceLastKey/1000)}s/${cooldownTime/1000}s - ${result}`);
+    return result;
 }
 
 function generateSecureKey(ip, userAgent) {
@@ -177,6 +199,14 @@ function updateUserActivity(ip, key) {
     const userData = userActivityDB.get(ip);
     userData.keys.push(key);
     userData.attempts.push(Date.now());
+    
+    // Manter apenas os últimos 50 registros para evitar memory leak
+    if (userData.attempts.length > 50) {
+        userData.attempts = userData.attempts.slice(-50);
+    }
+    if (userData.keys.length > 10) {
+        userData.keys = userData.keys.slice(-10);
+    }
 }
 
 async function logFraudAttempt(ip, reason, queryParams) {
@@ -222,9 +252,16 @@ export function validateKey(key) {
 // Limpeza automática
 setInterval(() => {
     const now = Date.now();
+    let expiredCount = 0;
+    
     for (const [key, data] of verificationDB.entries()) {
         if (now > data.expiresAt) {
             verificationDB.delete(key);
+            expiredCount++;
         }
     }
-}, 60 * 60 * 1000);
+    
+    if (expiredCount > 0) {
+        console.log(`🧹 Cleaned up ${expiredCount} expired keys`);
+    }
+}, 60 * 60 * 1000); // A cada hora
