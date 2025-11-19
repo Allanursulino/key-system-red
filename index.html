@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>24H KEY • CODE VERIFICATION</title>
+  <title>24H KEY • SECURE SYSTEM</title>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <style>
     body {margin:0;background:#000;color:#ff0048;font-family:'Courier New',monospace;overflow:hidden;}
@@ -22,26 +22,27 @@
   <div id="particles-js"></div>
   <div class="container">
     <h1>🔐 24H SECURE KEY</h1>
-    <p>Get your temporary key with secure verification</p>
+    <p>Complete verification to get your temporary key</p>
     
     <div class="verification-box">
       <h3>🔒 VERIFICATION PROCESS</h3>
       
       <div class="step">
         <strong>1. GET VERIFICATION CODE</strong><br>
-        Click the button below to generate your unique code
+        Click below to generate your unique code
       </div>
       
       <div id="codeSection" style="display:none;">
         <div class="step">
-          <strong>2. YOUR VERIFICATION CODE:</strong><br>
+          <strong>2. YOUR CODE:</strong><br>
           <div id="approvalCode">Loading...</div>
-          <div class="instructions">This code expires in 30 minutes</div>
+          <div class="instructions">⚠️ Save this code! Expires in 30 minutes</div>
         </div>
         
         <div class="step">
-          <strong>3. COMPLETE LOOTLABS VERIFICATION</strong><br>
+          <strong>3. GO TO LOOTLABS</strong><br>
           <button onclick="goToLootLabs()">🚀 GO TO LOOTLABS</button>
+          <div class="instructions">Complete the tasks on LootLabs</div>
         </div>
         
         <div class="step">
@@ -51,60 +52,69 @@
         </div>
       </div>
       
-      <button id="startBtn" onclick="startVerification()">🎯 START VERIFICATION</button>
+      <button id="startBtn" onclick="startVerification()">🎯 GET VERIFICATION CODE</button>
     </div>
 
     <div style="color:#ff9900;margin-top:20px;">
-      ⚠️ <strong>SECURITY:</strong> Each code works only once and expires in 30 minutes
+      🔒 <strong>SECURE:</strong> Each code works only once • Direct access blocked
     </div>
   </div>
 
   <script>
     let currentApprovalCode = '';
-    let currentRedirectUrl = '';
 
     async function startVerification() {
       try {
         document.getElementById('startBtn').disabled = true;
-        document.getElementById('startBtn').innerText = '🔄 Generating Code...';
+        document.getElementById('startBtn').innerText = '🔄 Generating...';
         
         const response = await fetch('/api/approve');
         const data = await response.json();
         
         if (data.success) {
           currentApprovalCode = data.approvalCode;
-          currentRedirectUrl = data.redirectUrl;
           
           document.getElementById('approvalCode').textContent = currentApprovalCode;
           document.getElementById('codeSection').style.display = 'block';
           document.getElementById('startBtn').style.display = 'none';
           
-          console.log('✅ Approval code generated:', currentApprovalCode);
+          // ✅ SALVAR NO LOCALSTORAGE
+          localStorage.setItem('approvalCode', currentApprovalCode);
+          localStorage.setItem('codeGenerated', Date.now().toString());
+          
+          console.log('✅ Code generated:', currentApprovalCode);
         } else {
           alert('Error generating code. Please try again.');
+          document.getElementById('startBtn').disabled = false;
+          document.getElementById('startBtn').innerText = '🎯 GET VERIFICATION CODE';
         }
       } catch (error) {
         console.error('Error:', error);
         alert('Network error. Please try again.');
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('startBtn').innerText = '🎯 GET VERIFICATION CODE';
       }
     }
 
     function goToLootLabs() {
-      if (currentRedirectUrl) {
-        window.open(currentRedirectUrl, '_blank');
-      } else {
-        alert('Please generate a verification code first.');
-      }
+      // ✅ LINK FIXO DO SEU LOOTLABS - SUBSTITUA PELO SEU!
+      const lootLabsUrl = 'https://lootdest.org/s?AL8n8hhY';
+      window.open(lootLabsUrl, '_blank');
     }
 
     async function getKey() {
       if (!currentApprovalCode) {
-        alert('Please generate a verification code first.');
-        return;
+        // Tentar recuperar do localStorage
+        currentApprovalCode = localStorage.getItem('approvalCode');
+        
+        if (!currentApprovalCode) {
+          alert('Please generate a verification code first.');
+          return;
+        }
       }
       
-      // Validar código antes de gerar key
       try {
+        // Validar código
         const validateResponse = await fetch('/api/approve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -114,15 +124,39 @@
         const validateData = await validateResponse.json();
         
         if (validateData.success) {
-          // Redirecionar para página da key com código válido
+          // ✅ REDIRECIONAR PARA KEY PAGE COM CÓDIGO
           window.location.href = `/key?code=${currentApprovalCode}`;
         } else {
-          alert('Verification failed. Please restart the process.');
+          alert('❌ Verification failed: ' + (validateData.error || 'Invalid code'));
         }
       } catch (error) {
         alert('Network error. Please try again.');
       }
     }
+
+    // Verificar se já tem código salvo
+    function checkSavedCode() {
+      const savedCode = localStorage.getItem('approvalCode');
+      const savedTime = localStorage.getItem('codeGenerated');
+      
+      if (savedCode && savedTime) {
+        const timeDiff = Date.now() - parseInt(savedTime);
+        // Código válido por 30 minutos
+        if (timeDiff < 30 * 60 * 1000) {
+          currentApprovalCode = savedCode;
+          document.getElementById('approvalCode').textContent = currentApprovalCode;
+          document.getElementById('codeSection').style.display = 'block';
+          document.getElementById('startBtn').style.display = 'none';
+        } else {
+          // Código expirado
+          localStorage.removeItem('approvalCode');
+          localStorage.removeItem('codeGenerated');
+        }
+      }
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', checkSavedCode);
 
     particlesJS("particles-js", {
       particles: {

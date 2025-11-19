@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 
-// Database simples de códigos aprovados (em produção use Redis)
 const approvedCodes = new Map();
 
 export default async function handler(req, res) {
@@ -13,9 +12,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
-    // ✅ GERAR NOVO CÓDIGO DE APROVAÇÃO
+    // ✅ GERAR CÓDIGO
     const approvalCode = crypto.randomBytes(8).toString('hex').toUpperCase();
-    const expiresAt = Date.now() + (30 * 60 * 1000); // 30 minutos
+    const expiresAt = Date.now() + (30 * 60 * 1000);
     
     approvedCodes.set(approvalCode, {
       created: Date.now(),
@@ -30,12 +29,13 @@ export default async function handler(req, res) {
       success: true, 
       approvalCode,
       expiresIn: '30 minutes',
-      redirectUrl: `https://loot-link.com/s?fdFLWci2?ref=${approvalCode}`
+      // ✅ LINK FIXO DO SEU LOOTLABS - SUBSTITUA PELO SEU!
+      lootlabsUrl: 'https://lootdest.org/s?AL8n8hhY'
     });
   }
   
   else if (req.method === 'POST') {
-    // ✅ VALIDAR CÓDIGO (chamado manualmente ou por webhook)
+    // ✅ VALIDAR CÓDIGO
     const { code } = req.body;
     
     if (!code) {
@@ -51,8 +51,7 @@ export default async function handler(req, res) {
       
       res.status(200).json({ 
         success: true, 
-        message: 'Code validated successfully',
-        keyUrl: `https://key-system-red-2hzg.vercel.app/key?code=${code}`
+        message: 'Code validated successfully'
       });
     } else {
       res.status(400).json({ success: false, error: 'Invalid or used code' });
@@ -60,7 +59,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Exportar função de validação para generate.js
 export function validateApprovalCode(code) {
   if (!approvedCodes.has(code)) {
     return { valid: false, reason: 'Code not found' };
