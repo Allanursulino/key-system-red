@@ -8,99 +8,79 @@
     body {margin:0;background:#000;color:#ff0048;font-family:'Courier New',monospace;overflow:hidden;}
     #particles-js {position:absolute;width:100%;height:100%;background:#000;}
     .box {position:relative;z-index:2;text-align:center;padding-top:15vh;}
-    h1 {font-size:55px;text-shadow:0 0 30px #ff0048;margin-bottom:20px;}
-    #key {font-size:45px;letter-spacing:10px;background:#111;padding:30px;margin:50px auto;width:700px;border:3px solid #ff0048;box-shadow:0 0 40px #ff0048;border-radius:15px;font-weight:bold;min-height:60px;display:flex;align-items:center;justify-content:center;}
-    button {padding:18px 60px;font-size:26px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;transition:0.3s;font-family:'Courier New',monospace;font-weight:bold;margin:20px;}
-    button:hover {background:#ff0048;color:#000;box-shadow:0 0 60px #ff0048;transform:scale(1.05);}
-    .loading {animation: pulse 1.5s infinite;}
-    @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
-    }
-    .info {margin-top:30px;font-size:18px;color:#ff6699;}
-    .back-btn {background:transparent;border:2px solid #ff0048;color:#ff0048;padding:12px 30px;font-size:18px;margin-top:20px;}
+    h1 {font-size:55px;text-shadow:0 0 30px #ff0048;}
+    #key {font-size:45px;letter-spacing:10px;background:#111;padding:30px;margin:50px auto;width:700px;border:3px solid #ff0048;box-shadow:0 0 40px #ff0048;border-radius:15px;}
+    button {padding:18px 60px;font-size:26px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;}
+    button:hover {background:#ff0048;color:#000;box-shadow:0 0 60px #ff0048;}
+    .error {color:#ff3333;font-size:24px;margin:30px;}
+    .back-btn {position:absolute;top:20px;left:20px;padding:10px 20px;background:transparent;border:2px solid #ff0048;color:#ff0048;border-radius:8px;cursor:pointer;text-decoration:none;}
     .back-btn:hover {background:#ff0048;color:#000;}
   </style>
 </head>
 <body>
   <div id="particles-js"></div>
+  
+  <a href="/" class="back-btn">← Back to Home</a>
+  
   <div class="box">
-    <h1>✅ KEY GENERATED</h1>
-    <div id="key" class="loading">GENERATING...</div>
-    <div>
-      <button onclick="copyKey()">📋 COPY KEY</button>
-      <button class="back-btn" onclick="location.href='/'">← BACK</button>
-    </div>
-    <p class="info">⏰ Valid for 24 hours only</p>
-    <p class="info">🔑 Key has been sent to Discord</p>
+    <h1>KEY GENERATED</h1>
+    <div id="key">🔒 Verifying access...</div>
+    <button onclick="copyKey()">COPY KEY</button>
+    <p style="margin-top:40px;">Valid for 24 hours only</p>
+    <div id="errorMessage" class="error"></div>
   </div>
 
   <script>
-    // Configuração das partículas
-    particlesJS("particles-js", {
-      particles: {
-        number: { value: 100, density: { enable: true, value_area: 800 } },
-        color: { value: "#ff0048" },
-        shape: { type: "circle" },
-        opacity: { value: 0.7, random: true },
-        size: { value: 4, random: true },
-        line_linked: { 
-          enable: true, 
-          distance: 150, 
-          color: "#ff0048", 
-          opacity: 0.4,
-          width: 2
-        },
-        move: { 
-          enable: true, 
-          speed: 6,
-          direction: "none",
-          random: true
-        }
-      },
-      interactivity: {
-        detect_on: "canvas",
-        events: { 
-          onhover: { enable: true, mode: "repulse" }
-        }
-      }
-    });
+    particlesJS("particles-js", {"particles":{"number":{"value":100},"color":{"value":"#ff0048"},"line_linked":{"enable":true,"color":"#ff0048"}}});
 
     let key = "";
-    
-    // Função para gerar e obter a key
+
     async function generateKey() {
       try {
-        const response = await fetch('/api/generate');
+        // Buscar token do localStorage
+        const accessToken = localStorage.getItem('keyAccessToken') || localStorage.getItem('pendingVerification');
+        
+        if (!accessToken) {
+          showError('❌ ACCESS DENIED: Please complete LootLabs tasks first.');
+          return;
+        }
+
+        document.getElementById('key').innerText = '🔄 Verifying access...';
+        
+        const response = await fetch(`/api/generate?token=${accessToken}`);
+        
         if (response.ok) {
           key = await response.text();
-          document.getElementById('key').textContent = key;
-          document.getElementById('key').classList.remove('loading');
+          document.getElementById('key').innerText = key;
+          
+          // Limpar tokens após uso
+          localStorage.removeItem('keyAccessToken');
+          localStorage.removeItem('pendingVerification');
+          localStorage.removeItem('tokenExpires');
+          
         } else {
-          throw new Error('Failed to generate key');
+          const errorText = await response.text();
+          showError(`❌ ${errorText}`);
         }
       } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('key').textContent = '❌ ERROR - Try Again';
-        document.getElementById('key').classList.remove('loading');
+        showError('❌ Network error. Please try again from the homepage.');
       }
     }
 
-    // Função para copiar a key
+    function showError(message) {
+      document.getElementById('key').style.display = 'none';
+      document.getElementById('errorMessage').innerText = message;
+    }
+
     function copyKey() {
       if (key) {
         navigator.clipboard.writeText(key).then(() => {
           alert('✅ Key copied to clipboard!');
-        }).catch(() => {
-          alert('❌ Failed to copy key');
         });
-      } else {
-        alert('⚠️ Key not generated yet');
       }
     }
 
-    // Gerar key automaticamente ao carregar a página
+    // Gerar key quando a página carrega
     generateKey();
   </script>
 </body>
