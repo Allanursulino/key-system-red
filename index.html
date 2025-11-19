@@ -13,7 +13,7 @@
     .instructions {margin:30px auto;max-width:600px;text-align:left;background:rgba(255,0,72,0.1);padding:25px;border-radius:15px;border:2px solid #ff0048;}
     button {padding:18px 50px;font-size:24px;background:#ff0048;color:#000;border:none;border-radius:12px;cursor:pointer;transition:0.4s;box-shadow:0 0 25px #ff0048;font-family:'Courier New',monospace;font-weight:bold;margin:10px;}
     button:hover {background:#ff3366;box-shadow:0 0 40px #ff0048;transform:scale(1.05);}
-    #status {margin:20px;padding:15px;background:rgba(255,0,72,0.2);border-radius:10px;display:inline-block;}
+    .step {margin:15px 0;padding:15px;background:rgba(0,0,0,0.5);border-radius:10px;border-left:4px solid #ff0048;}
   </style>
 </head>
 <body>
@@ -22,104 +22,37 @@
     <h1>🔥 24H TEMPORARY KEY</h1>
     <p>Complete the LootLabs tasks to receive your key</p>
     
-    <div id="status">🔄 Initializing security token...</div>
-    
     <div class="instructions">
       <h3>🎯 STEP-BY-STEP:</h3>
-      <ol>
-        <li>Click the button below to go to LootLabs</li>
-        <li>Complete ALL required tasks</li>
-        <li>You'll be redirected back automatically</li>
-        <li>Your key will be generated instantly!</li>
-      </ol>
+      
+      <div class="step">
+        <strong>STEP 1:</strong> Click the button below to go to LootLabs
+      </div>
+      
+      <div class="step">
+        <strong>STEP 2:</strong> Complete ALL required tasks on LootLabs
+      </div>
+      
+      <div class="step">
+        <strong>STEP 3:</strong> You'll be automatically redirected back here
+      </div>
+      
+      <div class="step">
+        <strong>STEP 4:</strong> Your 24-hour key will be generated!
+      </div>
     </div>
 
-    <button id="mainBtn" onclick="goToLootLabs()" disabled>
-      ⏳ Preparing...
+    <!-- BOTÃO PRINCIPAL - VAI PARA LOOTLABS -->
+    <button onclick="window.open('https://lootdest.org/s?SyRPDnvX', '_blank')">
+      🚀 GO TO LOOTLABS & GET KEY
     </button>
     
     <p style="margin-top:30px;color:#ff6699;">
-      🔒 Protected: Direct access to key page is blocked
+      ✅ After completing tasks, you'll be redirected automatically
     </p>
   </div>
 
   <script>
-    let accessToken = '';
-    let tokenExpires = 0;
-
-    // Gerar token de acesso
-    async function generateToken() {
-      try {
-        const response = await fetch('/api/token');
-        const data = await response.json();
-        
-        if (data.success) {
-          accessToken = data.token;
-          tokenExpires = data.expires;
-          
-          // Salvar no localStorage
-          localStorage.setItem('keyAccessToken', accessToken);
-          localStorage.setItem('tokenExpires', tokenExpires.toString());
-          
-          document.getElementById('status').innerHTML = '✅ Security token ready';
-          document.getElementById('mainBtn').disabled = false;
-          document.getElementById('mainBtn').innerHTML = '🚀 GO TO LOOTLABS & GET KEY';
-          
-          console.log('🔐 Token generated:', accessToken);
-        }
-      } catch (error) {
-        document.getElementById('status').innerHTML = '❌ Error generating token';
-      }
-    }
-
-    // Redirecionar para LootLabs
-    function goToLootLabs() {
-      if (!accessToken) {
-        accessToken = localStorage.getItem('keyAccessToken');
-      }
-      
-      if (accessToken) {
-        // ✅ SEU LINK DO LOOTLABS AQUI
-        const lootLabsUrl = `https://lootdest.org/s?SyRPDnvX`;
-        
-        // Salvar token para verificação depois
-        localStorage.setItem('pendingVerification', accessToken);
-        
-        console.log('🔗 Going to LootLabs with token:', accessToken);
-        window.open(lootLabsUrl, '_blank');
-        
-      } else {
-        alert('Please wait for security token...');
-      }
-    }
-
-    // Verificar token existente
-    function checkExistingToken() {
-      const savedToken = localStorage.getItem('keyAccessToken');
-      const savedExpires = localStorage.getItem('tokenExpires');
-      
-      if (savedToken && savedExpires) {
-        const now = Date.now();
-        if (now < parseInt(savedExpires)) {
-          accessToken = savedToken;
-          tokenExpires = parseInt(savedExpires);
-          document.getElementById('status').innerHTML = '✅ Security token active';
-          document.getElementById('mainBtn').disabled = false;
-          document.getElementById('mainBtn').innerHTML = '🚀 GO TO LOOTLABS & GET KEY';
-          return;
-        } else {
-          // Token expirado
-          localStorage.removeItem('keyAccessToken');
-          localStorage.removeItem('tokenExpires');
-        }
-      }
-      
-      generateToken();
-    }
-
-    // Inicializar
-    document.addEventListener('DOMContentLoaded', checkExistingToken);
-
     particlesJS("particles-js", {
       particles: {
         number: { value: 80, density: { enable: true, value_area: 800 } },
@@ -140,6 +73,13 @@
           direction: "none",
           random: true,
           out_mode: "out"
+        }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: { 
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
         }
       }
     });

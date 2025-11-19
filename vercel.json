@@ -2,13 +2,11 @@
   "version": 2,
   "builds": [
     { "src": "api/generate.js", "use": "@vercel/node" },
-    { "src": "api/token.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/", "dest": "/index.html" },
     { "src": "/key", "dest": "/key.html" },
-    { "src": "/api/generate", "dest": "/api/generate.js" },
-    { "src": "/api/token", "dest": "/api/token.js" }
+    { "src": "/api/generate", "dest": "/api/generate.js" }
   ]
 }
