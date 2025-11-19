@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Key • MultiHub Key System</title>
+    <title>Sua Key • MultiHub Key</title>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <style>
+        /* CSS do key.html - mantém igual */
         body {
             margin: 0;
             background: #0f172a;
@@ -106,28 +107,24 @@
     <div class="key-container">
         <div class="key-box">
             <div class="key-title">
-                <i class="fas fa-key"></i> YOUR 24H KEY
+                <i class="fas fa-key"></i> SUA KEY 24H
             </div>
             <div class="key-info">
-                Key generated via secure verification • Valid for 24 hours
+                Key gerada via verificação LootLabs • Válida por 24 horas
             </div>
             
-            <div id="key">🔄 Generating your key...</div>
+            <div id="key">🔄 Gerando sua key...</div>
             
             <div class="countdown" id="countdown">
-                ⏰ Expires in: <span id="timer">24:00:00</span>
+                ⏰ Expira em: <span id="timer">24:00:00</span>
             </div>
             
             <button class="copy-btn" onclick="copyKey()">
-                <i class="fas fa-copy"></i> COPY KEY
+                <i class="fas fa-copy"></i> COPIAR KEY
             </button>
             
             <div class="security-badge">
-                <i class="fas fa-shield-alt"></i> Protected by Anti-Fraud System
-            </div>
-            
-            <div style="margin-top: 30px; color: #64748b; font-size: 0.9rem;">
-                🔄 For a new key after 24h, repeat the verification process
+                <i class="fas fa-shield-alt"></i> MultiHub Key System
             </div>
         </div>
     </div>
@@ -165,13 +162,18 @@
                 const verified = urlParams.get('verified');
                 const platform = urlParams.get('platform');
                 
+                console.log('📋 Parâmetros URL:', { verified, platform });
+                
                 if (verified !== 'true' || platform !== 'lootlabs') {
-                    showError('Invalid verification parameters');
+                    showError('Acesso inválido. Complete a verificação LootLabs primeiro.');
                     return;
                 }
                 
+                console.log('🔄 Solicitando geração de key...');
                 const response = await fetch(`/api/verify?verified=true&platform=lootlabs&timestamp=${Date.now()}`);
                 const data = await response.json();
+                
+                console.log('📦 Resposta da API:', data);
                 
                 if (data.success) {
                     currentKey = data.key;
@@ -181,13 +183,16 @@
                     startCountdown();
                     
                     if (data.existing) {
-                        document.getElementById('key').innerHTML += '<br><small style="color: #f59e0b;">(Existing active key)</small>';
+                        document.getElementById('key').innerHTML += '<br><small style="color: #f59e0b;">(Key existente reutilizada)</small>';
                     }
+                    
+                    console.log('✅ Key gerada com sucesso:', currentKey);
                 } else {
-                    showError(data.message || 'Verification failed');
+                    showError(data.message || 'Falha ao gerar key');
                 }
             } catch (error) {
-                showError('Connection error. Please try again.');
+                console.error('❌ Erro:', error);
+                showError('Erro de conexão. Tente novamente.');
             }
         }
 
@@ -197,7 +202,7 @@
                 const timeLeft = expiryTime - now;
                 
                 if (timeLeft <= 0) {
-                    document.getElementById('timer').textContent = 'EXPIRED';
+                    document.getElementById('timer').textContent = 'EXPIRADA';
                     document.getElementById('timer').style.color = '#ef4444';
                     return;
                 }
@@ -217,10 +222,10 @@
         function copyKey() {
             if (currentKey) {
                 navigator.clipboard.writeText(currentKey).then(() => {
-                    alert('✅ Key copied to clipboard!');
+                    alert('✅ Key copiada para a área de transferência!');
                 });
             } else {
-                alert('⏳ Please wait for the key to be generated...');
+                alert('⏳ Aguarde a key ser gerada...');
             }
         }
 
@@ -229,7 +234,7 @@
             document.getElementById('key').style.color = '#ef4444';
         }
 
-        // Start key generation
+        // Iniciar geração da key
         generateKey();
     </script>
 </body>
