@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YOUR KEY • 24H</title>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <style>
+    body {margin:0;background:#000;color:#ff0048;font-family:'Courier New',monospace;overflow:hidden;}
+    #particles-js {position:absolute;width:100%;height:100%;background:#000;}
+    .box {position:relative;z-index:2;text-align:center;padding-top:15vh;}
+    h1 {font-size:55px;text-shadow:0 0 30px #ff0048;margin-bottom:20px;}
+    #key {font-size:45px;letter-spacing:10px;background:#111;padding:30px;margin:50px auto;width:700px;border:3px solid #ff0048;box-shadow:0 0 40px #ff0048;border-radius:15px;font-weight:bold;min-height:60px;display:flex;align-items:center;justify-content:center;}
+    button {padding:18px 60px;font-size:26px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;transition:0.3s;font-family:'Courier New',monospace;font-weight:bold;margin:20px;}
+    button:hover {background:#ff0048;color:#000;box-shadow:0 0 60px #ff0048;transform:scale(1.05);}
+    .loading {animation: pulse 1.5s infinite;}
+    @keyframes pulse {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+    .info {margin-top:30px;font-size:18px;color:#ff6699;}
+    .back-btn {background:transparent;border:2px solid #ff0048;color:#ff0048;padding:12px 30px;font-size:18px;margin-top:20px;}
+    .back-btn:hover {background:#ff0048;color:#000;}
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+  <div class="box">
+    <h1>✅ KEY GENERATED</h1>
+    <div id="key" class="loading">GENERATING...</div>
+    <div>
+      <button onclick="copyKey()">📋 COPY KEY</button>
+      <button class="back-btn" onclick="location.href='/'">← BACK</button>
+    </div>
+    <p class="info">⏰ Valid for 24 hours only</p>
+    <p class="info">🔑 Key has been sent to Discord</p>
+  </div>
+
+  <script>
+    // Configuração das partículas
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 100, density: { enable: true, value_area: 800 } },
+        color: { value: "#ff0048" },
+        shape: { type: "circle" },
+        opacity: { value: 0.7, random: true },
+        size: { value: 4, random: true },
+        line_linked: { 
+          enable: true, 
+          distance: 150, 
+          color: "#ff0048", 
+          opacity: 0.4,
+          width: 2
+        },
+        move: { 
+          enable: true, 
+          speed: 6,
+          direction: "none",
+          random: true
+        }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: { 
+          onhover: { enable: true, mode: "repulse" }
+        }
+      }
+    });
+
+    let key = "";
+    
+    // Função para gerar e obter a key
+    async function generateKey() {
+      try {
+        const response = await fetch('/api/generate');
+        if (response.ok) {
+          key = await response.text();
+          document.getElementById('key').textContent = key;
+          document.getElementById('key').classList.remove('loading');
+        } else {
+          throw new Error('Failed to generate key');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('key').textContent = '❌ ERROR - Try Again';
+        document.getElementById('key').classList.remove('loading');
+      }
+    }
+
+    // Função para copiar a key
+    function copyKey() {
+      if (key) {
+        navigator.clipboard.writeText(key).then(() => {
+          alert('✅ Key copied to clipboard!');
+        }).catch(() => {
+          alert('❌ Failed to copy key');
+        });
+      } else {
+        alert('⚠️ Key not generated yet');
+      }
+    }
+
+    // Gerar key automaticamente ao carregar a página
+    generateKey();
+  </script>
+</body>
+</html>

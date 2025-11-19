@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>24H KEY • RED EDITION</title>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <style>
+    body {margin:0;background:#000;color:#ff0048;font-family:'Courier New',monospace;overflow:hidden;}
+    #particles-js {position:absolute;width:100%;height:100%;background:#000;}
+    .container {position:relative;z-index:2;text-align:center;padding-top:20vh;}
+    h1 {font-size:60px;text-shadow:0 0 20px #ff0048;margin-bottom:30px;}
+    p {font-size:24px;margin:30px;}
+    button {padding:20px 60px;font-size:28px;background:transparent;border:3px solid #ff0048;color:#ff0048;border-radius:15px;cursor:pointer;transition:0.4s;box-shadow:0 0 30px #ff0048;font-family:'Courier New',monospace;font-weight:bold;}
+    button:hover {background:#ff0048;color:#000;box-shadow:0 0 50px #ff0048;transform:scale(1.05);}
+    .steps {margin:40px auto;max-width:600px;text-align:left;font-size:18px;background:rgba(255,0,72,0.1);padding:20px;border-radius:10px;border:1px solid #ff0048;}
+    .steps li {margin:15px 0;}
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+  <div class="container">
+    <h1>🔥 24H TEMPORARY KEY</h1>
+    <p>Complete the steps and receive your key instantly</p>
+    
+    <div class="steps">
+      <h3>📋 Steps to get your key:</h3>
+      <ol>
+        <li>Click the button below</li>
+        <li>Complete the verification process</li>
+        <li>Your key will be generated automatically</li>
+        <li>Copy and use within 24 hours</li>
+      </ol>
+    </div>
+    
+    <button onclick="location.href='/key'">🎯 GENERATE KEY NOW</button>
+  </div>
+
+  <script>
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: "#ff0048" },
+        shape: { type: "circle" },
+        opacity: { value: 0.7, random: true },
+        size: { value: 4, random: true },
+        line_linked: { 
+          enable: true, 
+          distance: 150, 
+          color: "#ff0048", 
+          opacity: 0.4,
+          width: 2
+        },
+        move: { 
+          enable: true, 
+          speed: 6,
+          direction: "none",
+          random: true,
+          out_mode: "out"
+        }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: { 
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
