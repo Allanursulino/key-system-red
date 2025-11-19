@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiHub Key • Sistema LootLabs</title>
+    <title>MultiHub Key • LootLabs System 2025</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <style>
-        /* Seu CSS existente aqui - mantém igual */
+        /* SEU CSS COMPLETO AQUI (mantenha igual ao anterior) */
         :root {
             --primary: #dc2626;
             --primary-dark: #b91c1c;
@@ -19,7 +19,312 @@
             --light: #f9fafb;
         }
         
-        /* ... resto do CSS igual ... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: var(--darker);
+            color: var(--light);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--darker) 0%, #450a0a 100%);
+            z-index: -1;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 0 40px 0;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: #9ca3af;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Verification Box */
+        .verification-box {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 50px;
+            margin: 40px auto;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .verification-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        
+        .verification-subtitle {
+            color: #9ca3af;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        /* LootLabs Card */
+        .lootlabs-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .lootlabs-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .lootlabs-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .lootlabs-desc {
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+        
+        /* Steps */
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 60px;
+            right: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            z-index: 1;
+        }
+        
+        .step {
+            text-align: center;
+            z-index: 2;
+            flex: 1;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--darker);
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .step-text {
+            font-size: 0.9rem;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            font-size: 1.3rem;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            margin: 30px 0;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* System Rules */
+        .system-rules {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .rules-title {
+            color: var(--danger);
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .rules-list {
+            list-style: none;
+        }
+        
+        .rules-list li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .rules-list li:before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+        }
+        
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Security Features */
+        .security-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .security-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .security-badge i {
+            color: var(--secondary);
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        /* Verification Status */
+        .verification-status {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .status-completed {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .status-failed {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -31,71 +336,98 @@
                 <i class="fas fa-key"></i>
                 MultiHub Key
             </div>
+            <nav class="nav-links">
+                <a href="#"><i class="fas fa-home"></i> Home</a>
+                <a href="#rules"><i class="fas fa-info-circle"></i> Rules</a>
+            </nav>
         </header>
         
         <section class="hero">
-            <h1>Sistema MultiHub Key</h1>
-            <p>Gere sua key de 24 horas gratuitamente via LootLabs</p>
+            <h1>LootLabs System 2025</h1>
+            <p>Complete LootLabs verification to generate your 24-hour access key</p>
         </section>
         
         <div class="verification-box">
             <div class="verification-title">
-                <i class="fas fa-user-shield"></i> Verificação LootLabs
+                <i class="fas fa-user-shield"></i> LootLabs Verification
             </div>
             <div class="verification-subtitle">
-                Complete a verificação para gerar sua key de 24 horas
+                You MUST complete the LootLabs tasks to receive your key
+            </div>
+            
+            <div class="security-features">
+                <div class="security-badge">
+                    <i class="fas fa-clock"></i>
+                    <div>24 Hours</div>
+                </div>
+                <div class="security-badge">
+                    <i class="fas fa-ban"></i>
+                    <div>Anti-Fraud</div>
+                </div>
+                <div class="security-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>Secure</div>
+                </div>
             </div>
             
             <div class="lootlabs-card">
                 <div class="lootlabs-icon">
                     <i class="fas fa-gamepad"></i>
                 </div>
-                <div class="lootlabs-name">Verificação LootLabs</div>
-                <div class="lootlabs-desc">Complete as tasks para receber sua key</div>
+                <div class="lootlabs-name">LootLabs Verification</div>
+                <div class="lootlabs-desc">Complete ALL tasks to receive your 24h key</div>
             </div>
             
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <div class="step-text">Clique em Verificar</div>
+                    <div class="step-text">Start Verification</div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <div class="step-text">Complete no LootLabs</div>
+                    <div class="step-text">Complete ALL Tasks</div>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <div class="step-text">Receba sua Key</div>
+                    <div class="step-text">Get Your Key</div>
                 </div>
+            </div>
+            
+            <div class="verification-status" id="verificationStatus">
+                <i class="fas fa-sync-alt fa-spin"></i>
+                <span id="statusText">Waiting for LootLabs completion...</span>
             </div>
             
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <div>Iniciando verificação...</div>
+                <div>Initializing verification...</div>
             </div>
             
             <button class="btn-primary" onclick="startVerification()" id="verifyBtn">
-                <i class="fas fa-play"></i> Iniciar Verificação LootLabs
+                <i class="fas fa-play"></i> Start LootLabs Verification
             </button>
             
-            <div class="system-rules">
+            <div class="system-rules" id="rules">
                 <div class="rules-title">
-                    <i class="fas fa-exclamation-triangle"></i> Sistema Seguro
+                    <i class="fas fa-exclamation-triangle"></i> Important Rules
                 </div>
                 <ul class="rules-list">
-                    <li>1 key ativa por IP</li>
-                    <li>Keys expiram em 24 horas</li>
-                    <li>Verificação via LootLabs obrigatória</li>
-                    <li>Sistema anti-fraude ativo</li>
+                    <li>You MUST complete ALL LootLabs tasks</li>
+                    <li>Keys are only generated after successful verification</li>
+                    <li>1 active key per IP address</li>
+                    <li>Keys expire in 24 hours</li>
+                    <li>Fraud attempts are automatically blocked</li>
                 </ul>
             </div>
         </div>
     </div>
 
     <script>
-        // ✅ CONFIGURAÇÃO CORRETA
+        // ✅ CONFIGURAÇÃO
         const LOOTLABS_URL = 'https://loot-link.com/s?irN3pVRa';
-        
+        let currentVerificationId = null;
+        let verificationCheckInterval = null;
+
         // Particles.js
         particlesJS("particles-js", {
             particles: {
@@ -131,53 +463,119 @@
         async function startVerification() {
             const verifyBtn = document.getElementById('verifyBtn');
             const loading = document.getElementById('loading');
+            const statusDiv = document.getElementById('verificationStatus');
+            const statusText = document.getElementById('statusText');
             
-            // Mostrar loading
+            // Show loading
             verifyBtn.disabled = true;
-            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing...';
             loading.style.display = 'block';
             
             try {
-                // ✅ PRIMEIRO: Pré-verificação de segurança
-                console.log('🔒 Fazendo pré-verificação...');
+                // ✅ FIRST: Pre-check and get verification ID
+                console.log('🔒 Starting pre-check...');
                 const securityCheck = await fetch('/api/verify?precheck=true&platform=lootlabs');
                 const checkData = await securityCheck.json();
                 
                 if (!checkData.success) {
-                    throw new Error(checkData.message || 'Pré-verificação falhou');
+                    throw new Error(checkData.message || 'Security check failed');
                 }
 
-                console.log('✅ Pré-verificação aprovada');
+                currentVerificationId = checkData.verification_id;
+                console.log('✅ Pre-check approved. Verification ID:', currentVerificationId);
                 
-                // ✅ SEGUNDO: Abrir LootLabs
-                console.log('🌐 Abrindo LootLabs...');
-                window.open(LOOTLABS_URL, '_blank');
+                // ✅ SECOND: Open LootLabs
+                console.log('🌐 Opening LootLabs...');
+                const lootLabsWindow = window.open(LOOTLABS_URL, '_blank');
                 
-                // ✅ TERCEIRO: Mostrar instruções
-                alert('🎮 Verificação LootLabs Iniciada!\n\n✅ Complete as tasks no LootLabs\n✅ Após conclusão, você será redirecionado\n✅ Sua key de 24h será gerada automaticamente\n\n⚠️ Mantenha esta página aberta!');
+                if (!lootLabsWindow) {
+                    throw new Error('Please allow popups for LootLabs verification');
+                }
                 
-                // ✅ QUARTO: Redirecionar para página da key após 30 segundos
-                console.log('⏰ Agendando redirecionamento...');
-                setTimeout(() => {
-                    console.log('🔗 Redirecionando para página da key...');
-                    window.location.href = `/key?verified=true&platform=lootlabs&timestamp=${Date.now()}`;
-                }, 30000); // 30 segundos
+                // ✅ THIRD: Show instructions and start monitoring
+                alert('🎮 LootLabs Verification Started!\n\n✅ Complete ALL tasks in the LootLabs window\n✅ DO NOT close the LootLabs window\n✅ Return here after completion\n✅ Your key will be generated automatically');
+                
+                // Hide loading, show status
+                loading.style.display = 'none';
+                statusDiv.style.display = 'block';
+                statusText.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Waiting for LootLabs completion...';
+                verifyBtn.innerHTML = '<i class="fas fa-hourglass-half"></i> Verification in Progress';
+                
+                // ✅ FOURTH: Start checking for completion
+                startVerificationMonitoring();
                 
             } catch (error) {
-                console.error('❌ Erro:', error);
-                alert('❌ Erro: ' + error.message);
+                console.error('❌ Error:', error);
+                alert('❌ Error: ' + error.message);
                 resetButton();
             }
+        }
+
+        function startVerificationMonitoring() {
+            if (verificationCheckInterval) {
+                clearInterval(verificationCheckInterval);
+            }
+            
+            verificationCheckInterval = setInterval(async () => {
+                if (!currentVerificationId) {
+                    clearInterval(verificationCheckInterval);
+                    return;
+                }
+                
+                try {
+                    console.log('🔍 Checking verification status...');
+                    const response = await fetch(`/api/verify?verification_id=${currentVerificationId}&verified=true&platform=lootlabs`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // ✅ VERIFICATION COMPLETED SUCCESSFULLY
+                        clearInterval(verificationCheckInterval);
+                        
+                        const statusDiv = document.getElementById('verificationStatus');
+                        const statusText = document.getElementById('statusText');
+                        
+                        statusDiv.className = 'verification-status status-completed';
+                        statusText.innerHTML = '<i class="fas fa-check-circle"></i> Verification Completed! Redirecting...';
+                        
+                        console.log('🎉 Verification completed! Key:', data.key);
+                        
+                        // Redirect to key page after short delay
+                        setTimeout(() => {
+                            window.location.href = `/key?verified=true&platform=lootlabs&verification_id=${currentVerificationId}&key=${data.key}`;
+                        }, 2000);
+                        
+                    } else {
+                        console.log('⏳ Verification not completed yet...');
+                        // Continue waiting...
+                    }
+                } catch (error) {
+                    console.error('❌ Error checking verification:', error);
+                }
+            }, 5000); // Check every 5 seconds
         }
 
         function resetButton() {
             const verifyBtn = document.getElementById('verifyBtn');
             const loading = document.getElementById('loading');
+            const statusDiv = document.getElementById('verificationStatus');
+            
+            if (verificationCheckInterval) {
+                clearInterval(verificationCheckInterval);
+            }
             
             verifyBtn.disabled = false;
-            verifyBtn.innerHTML = '<i class="fas fa-play"></i> Iniciar Verificação LootLabs';
+            verifyBtn.innerHTML = '<i class="fas fa-play"></i> Start LootLabs Verification';
             loading.style.display = 'none';
+            statusDiv.style.display = 'none';
+            currentVerificationId = null;
         }
+
+        // Reset if page is refreshed
+        window.addEventListener('beforeunload', () => {
+            if (verificationCheckInterval) {
+                clearInterval(verificationCheckInterval);
+            }
+        });
     </script>
 </body>
 </html>

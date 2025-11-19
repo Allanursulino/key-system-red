@@ -4,6 +4,7 @@ import crypto from 'crypto';
 const verificationDB = new Map();
 const userActivityDB = new Map();
 const validKeysDB = new Map();
+const pendingVerifications = new Map(); // Novas verificações pendentes
 
 // Configurações
 const CONFIG = {
@@ -24,13 +25,13 @@ export default async function handler(req, res) {
 
     try {
         const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
-        const { key, precheck, verified, platform } = req.query;
+        const { key, precheck, verified, platform, verification_id } = req.query;
 
         console.log('=== 🔐 VERIFY API ===');
         console.log('IP:', clientIP);
         console.log('Query:', req.query);
 
-        // ✅ PRECHECK - Verificação antes de gerar key
+        // ✅ PRECHECK - Verificação antes de iniciar
         if (precheck === 'true') {
             const securityCheck = await performPreCheck(clientIP);
             
@@ -41,22 +42,42 @@ export default async function handler(req, res) {
                 });
             }
 
+            // Criar verificação pendente
+            const verificationId = generateVerificationId();
+            pendingVerifications.set(verificationId, {
+                ip: clientIP,
+                createdAt: Date.now(),
+                completed: false
+            });
+
             return res.status(200).json({
                 success: true,
-                message: 'Pré-verificação aprovada'
+                message: 'Pre-check approved',
+                verification_id: verificationId
             });
         }
 
-        // ✅ GERAR NOVA KEY - Quando usuário completa verificação LootLabs
-        if (verified === 'true' && platform === 'lootlabs') {
-            const securityCheck = await performPreCheck(clientIP);
+        // ✅ VERIFICAR SE COMPLETOU NO LOOTLABS
+        if (verification_id && verified === 'true') {
+            const pendingVerification = pendingVerifications.get(verification_id);
             
-            if (!securityCheck.allowed) {
+            if (!pendingVerification) {
                 return res.status(403).json({
                     success: false,
-                    message: securityCheck.reason
+                    message: 'Invalid verification session'
                 });
             }
+
+            if (pendingVerification.ip !== clientIP) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'IP mismatch'
+                });
+            }
+
+            // Marcar como completada
+            pendingVerification.completed = true;
+            pendingVerification.completedAt = Date.now();
 
             // Verificar se já tem key ativa
             const existingKey = await getActiveKeyForIP(clientIP);
@@ -69,14 +90,17 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Gerar nova key
+            // Gerar nova key APENAS se completou a verificação
             const keyData = generateSecureKey(clientIP);
+            
+            // Limpar verificação pendente
+            pendingVerifications.delete(verification_id);
             
             return res.status(200).json({
                 success: true,
                 key: keyData.key,
                 expiresAt: keyData.expiresAt,
-                expiresIn: '24 horas',
+                expiresIn: '24 hours',
                 existing: false
             });
         }
@@ -94,7 +118,7 @@ export default async function handler(req, res) {
 
             return res.status(200).json({
                 success: true,
-                message: 'Key válida',
+                message: 'Key valid',
                 key: key,
                 data: {
                     expiresAt: validation.expiresAt,
@@ -104,19 +128,23 @@ export default async function handler(req, res) {
             });
         }
 
-        // ❌ Se não tem parâmetros válidos
         return res.status(400).json({
             success: false,
-            message: 'Parâmetros inválidos'
+            message: 'Invalid parameters'
         });
 
     } catch (error) {
-        console.error('❌ Erro na API verify:', error);
+        console.error('❌ Error in verify API:', error);
         res.status(500).json({ 
             success: false, 
-            message: 'Erro interno do servidor' 
+            message: 'Internal server error' 
         });
     }
+}
+
+// ✅ GERAR ID DE VERIFICAÇÃO
+function generateVerificationId() {
+    return crypto.randomBytes(8).toString('hex');
 }
 
 // ✅ PRÉ-VERIFICAÇÃO
@@ -129,8 +157,8 @@ async function performPreCheck(ip) {
     const hourAgo = Date.now() - (60 * 60 * 1000);
     const recentPrechecks = userData.prechecks.filter(time => time > hourAgo);
     
-    if (recentPrechecks.length >= 5) {
-        return { allowed: false, reason: 'Muitas tentativas recentes' };
+    if (recentPrechecks.length >= 3) {
+        return { allowed: false, reason: 'Too many verification attempts' };
     }
     
     userData.prechecks.push(Date.now());
@@ -142,7 +170,6 @@ function generateSecureKey(ip) {
     const key = crypto.randomBytes(16).toString('hex').toUpperCase();
     const expiresAt = Date.now() + (CONFIG.KEY_EXPIRY_HOURS * 60 * 60 * 1000);
     
-    // Salvar no banco
     validKeysDB.set(key, {
         ip: ip,
         createdAt: Date.now(),
@@ -151,13 +178,12 @@ function generateSecureKey(ip) {
         isValid: true
     });
     
-    // Registrar no usuário
     if (!userActivityDB.has(ip)) {
         userActivityDB.set(ip, { attempts: [], keys: [], prechecks: [] });
     }
     userActivityDB.get(ip).keys.push(key);
     
-    console.log('🔑 NOVA KEY GERADA:', key, 'para IP:', ip);
+    console.log('🔑 NEW KEY GENERATED:', key, 'for IP:', ip);
     
     return { key, expiresAt };
 }
@@ -186,18 +212,18 @@ async function getActiveKeyForIP(ip) {
 // ✅ VALIDAR KEY
 function validateKey(key) {
     if (!validKeysDB.has(key)) {
-        return { valid: false, reason: 'Key não encontrada' };
+        return { valid: false, reason: 'Key not found' };
     }
     
     const keyData = validKeysDB.get(key);
     
     if (!keyData.isValid) {
-        return { valid: false, reason: 'Key revogada' };
+        return { valid: false, reason: 'Key revoked' };
     }
     
     if (Date.now() > keyData.expiresAt) {
         validKeysDB.delete(key);
-        return { valid: false, reason: 'Key expirada' };
+        return { valid: false, reason: 'Key expired' };
     }
     
     keyData.uses += 1;
@@ -209,11 +235,13 @@ function validateKey(key) {
     };
 }
 
-// Limpeza automática
+// ✅ LIMPEZA AUTOMÁTICA (incluindo verificações pendentes expiradas)
 setInterval(() => {
     const now = Date.now();
     let expiredCount = 0;
+    let pendingExpired = 0;
     
+    // Limpar keys expiradas
     for (const [key, data] of validKeysDB.entries()) {
         if (now > data.expiresAt) {
             validKeysDB.delete(key);
@@ -221,7 +249,15 @@ setInterval(() => {
         }
     }
     
-    if (expiredCount > 0) {
-        console.log(`🧹 Limpas ${expiredCount} keys expiradas`);
+    // Limpar verificações pendentes expiradas (10 minutos)
+    for (const [id, data] of pendingVerifications.entries()) {
+        if (now - data.createdAt > 10 * 60 * 1000) { // 10 minutos
+            pendingVerifications.delete(id);
+            pendingExpired++;
+        }
     }
-}, 30 * 60 * 1000);
+    
+    if (expiredCount > 0 || pendingExpired > 0) {
+        console.log(`🧹 Cleaned ${expiredCount} expired keys and ${pendingExpired} pending verifications`);
+    }
+}, 5 * 60 * 1000); // A cada 5 minutos
