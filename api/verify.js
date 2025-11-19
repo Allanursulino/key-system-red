@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 
-// Database em memória (em produção use Redis)
+// Database em memória
 const verificationDB = new Map();
 const userActivityDB = new Map();
 const fraudDetectionDB = new Map();
+const pendingVerifications = new Map();
 
 // Configurações
 const CONFIG = {
@@ -11,12 +12,13 @@ const CONFIG = {
     KEY_EXPIRY_HOURS: 24,
     COOLDOWN_MINUTES: 30,
     MAX_ATTEMPTS_PER_HOUR: 10,
-    FRAUD_THRESHOLD: 5
+    FRAUD_THRESHOLD: 5,
+    VERIFICATION_TIMEOUT: 5 * 60 * 1000
 };
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -28,185 +30,154 @@ export default async function handler(req, res) {
         const userAgent = req.headers['user-agent'] || '';
         const referer = req.headers['referer'] || '';
         
-        console.log('=== 🔐 VERIFICATION REQUEST ===');
+        console.log('=== 🔐 VERIFICATION ===');
         console.log('IP:', clientIP);
         console.log('Referer:', referer);
 
-        // ✅ ANTI-FRAUDE: Verificações de segurança
+        // ✅ VERIFICAÇÃO ÚNICA
+        if (pendingVerifications.has(clientIP)) {
+            const pending = pendingVerifications.get(clientIP);
+            if (Date.now() - pending.startedAt < CONFIG.VERIFICATION_TIMEOUT) {
+                console.log('🚫 BLOCKED: Verification already in progress');
+                return res.status(429).json({
+                    success: false,
+                    error: 'VERIFICATION_IN_PROGRESS',
+                    message: 'Please complete your current verification first'
+                });
+            } else {
+                pendingVerifications.delete(clientIP);
+            }
+        }
+
+        // ✅ ANTI-FRAUDE
         const fraudCheck = await performFraudCheck(clientIP, userAgent, referer, req.query);
         
         if (!fraudCheck.allowed) {
-            console.log('🚫 BLOCKED by Anti-Fraud:', fraudCheck.reason);
-            
+            console.log('🚫 BLOCKED:', fraudCheck.reason);
             await logFraudAttempt(clientIP, fraudCheck.reason, req.query);
-            return sendBlockResponse(res, fraudCheck.reason);
+            return res.status(403).json({
+                success: false,
+                error: 'ACCESS_DENIED',
+                message: fraudCheck.reason
+            });
         }
 
-        // ✅ GERAR KEY SEGURA
-        const keyData = generateSecureKey(clientIP, userAgent);
-        
-        console.log('✅ KEY GENERATED:', keyData.key);
+        // ✅ PRÉ-VERIFICAÇÃO
+        if (req.query.precheck === 'true') {
+            console.log('✅ Pre-check passed - Starting LootLabs verification');
+            
+            pendingVerifications.set(clientIP, {
+                startedAt: Date.now(),
+                userAgent: userAgent,
+                platform: req.query.platform
+            });
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Pre-check successful'
+            });
+        }
 
-        // ✅ ATUALIZAR ESTATÍSTICAS
-        updateUserActivity(clientIP, keyData.key);
+        // ✅ PÓS-VERIFICAÇÃO
+        if (req.query.verified === 'true' && req.query.platform === 'lootlabs') {
+            if (!pendingVerifications.has(clientIP)) {
+                console.log('🚫 BLOCKED: No pending verification found');
+                return res.status(403).json({
+                    success: false,
+                    error: 'NO_PENDING_VERIFICATION',
+                    message: 'Please start verification from homepage'
+                });
+            }
 
-        // ✅ ENVIAR PARA DISCORD
-        await sendVerificationAlert(clientIP, keyData, req.query);
+            const keyData = generateSecureKey(clientIP, userAgent);
+            console.log('✅ SINGLE KEY GENERATED:', keyData.key);
 
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).json({
-            success: true,
-            key: keyData.key,
-            expiresAt: keyData.expiresAt,
-            expiresIn: '24 hours',
-            message: 'Key generated successfully'
+            pendingVerifications.delete(clientIP);
+            updateUserActivity(clientIP, keyData.key);
+
+            // Webhook Discord
+            await sendToDiscord({
+                title: "✅ Key Generated",
+                description: `**Key:** ||${keyData.key}||\n**IP:** ${clientIP}\n**Time:** ${new Date().toLocaleString()}`,
+                color: 65280
+            });
+
+            return res.status(200).json({
+                success: true,
+                key: keyData.key,
+                expiresAt: keyData.expiresAt,
+                expiresIn: '24 hours'
+            });
+        }
+
+        return res.status(400).json({
+            success: false,
+            error: 'INVALID_REQUEST'
         });
 
     } catch (error) {
-        console.error('❌ Verification API error:', error);
+        console.error('❌ Verify API error:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'System temporarily unavailable' 
+            error: 'SYSTEM_ERROR' 
         });
     }
 }
 
-// ✅ SISTEMA ANTI-FRAUDE
+// Funções Anti-Fraude
 async function performFraudCheck(ip, userAgent, referer, queryParams) {
     const checks = {
-        // 1. Verificação de IP
         ipNotBanned: !fraudDetectionDB.has(ip) || fraudDetectionDB.get(ip).score < CONFIG.FRAUD_THRESHOLD,
-        
-        // 2. Limite de tentativas
         withinAttemptLimit: await checkAttemptLimit(ip),
-        
-        // 3. Limite de keys por IP
         withinKeyLimit: await checkKeyLimit(ip),
-        
-        // 4. Cooldown respeitado
         cooldownRespected: await checkCooldown(ip),
-        
-        // 5. User Agent válido
-        validUserAgent: userAgent && userAgent.length > 10 && !isSuspiciousUserAgent(userAgent),
-        
-        // 6. Referer válido (se veio de plataforma de verificação)
-        validReferer: !referer || referer.includes('lootlabs.gg') || referer.includes('ogads.com'),
-        
-        // 7. Parâmetros válidos
-        validParams: queryParams.verified === 'true' && queryParams.source
+        validUserAgent: userAgent && userAgent.length > 10,
+        validReferer: !referer || referer.includes('lootlabs.gg'),
+        validParams: queryParams.verified === 'true' && queryParams.platform === 'lootlabs'
     };
 
     const passedChecks = Object.values(checks).filter(Boolean).length;
-    const totalChecks = Object.keys(checks).length;
     
-    console.log('🔐 Fraud Check Results:', checks);
-    console.log('📊 Score:', passedChecks + '/' + totalChecks);
-
     if (passedChecks < 5) {
         return {
             allowed: false,
-            reason: `Failed security checks (${passedChecks}/${totalChecks})`,
-            score: passedChecks
+            reason: `Failed security checks (${passedChecks}/7)`
         };
     }
 
-    return { allowed: true, score: passedChecks };
+    return { allowed: true };
 }
 
-// ✅ VERIFICAÇÃO DE LIMITE DE TENTATIVAS
 async function checkAttemptLimit(ip) {
-    const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
-    
-    if (!userActivityDB.has(ip)) {
-        userActivityDB.set(ip, { attempts: [], keys: [] });
-    }
-    
+    if (!userActivityDB.has(ip)) return true;
     const userData = userActivityDB.get(ip);
+    const hourAgo = Date.now() - (60 * 60 * 1000);
     const recentAttempts = userData.attempts.filter(time => time > hourAgo);
-    
-    if (recentAttempts.length >= CONFIG.MAX_ATTEMPTS_PER_HOUR) {
-        // Aumentar score de fraude
-        incrementFraudScore(ip, 'Too many attempts');
-        return false;
-    }
-    
-    // Registrar tentativa
-    userData.attempts.push(now);
-    return true;
+    return recentAttempts.length < CONFIG.MAX_ATTEMPTS_PER_HOUR;
 }
 
-// ✅ VERIFICAÇÃO DE LIMITE DE KEYS
 async function checkKeyLimit(ip) {
     if (!userActivityDB.has(ip)) return true;
-    
     const userData = userActivityDB.get(ip);
     const activeKeys = userData.keys.filter(key => 
         verificationDB.has(key) && verificationDB.get(key).expiresAt > Date.now()
     );
-    
-    if (activeKeys.length >= CONFIG.MAX_KEYS_PER_IP) {
-        incrementFraudScore(ip, 'Key limit exceeded');
-        return false;
-    }
-    
-    return true;
+    return activeKeys.length < CONFIG.MAX_KEYS_PER_IP;
 }
 
-// ✅ VERIFICAÇÃO DE COOLDOWN
 async function checkCooldown(ip) {
     if (!userActivityDB.has(ip)) return true;
-    
     const userData = userActivityDB.get(ip);
     const lastKeyTime = Math.max(...userData.keys.map(key => 
         verificationDB.has(key) ? verificationDB.get(key).createdAt : 0
     ));
-    
-    const cooldownTime = CONFIG.COOLDOWN_MINUTES * 60 * 1000;
-    
-    if (Date.now() - lastKeyTime < cooldownTime) {
-        incrementFraudScore(ip, 'Cooldown not respected');
-        return false;
-    }
-    
-    return true;
+    return Date.now() - lastKeyTime > (CONFIG.COOLDOWN_MINUTES * 60 * 1000);
 }
 
-// ✅ DETECÇÃO DE USER AGENT SUSPEITO
-function isSuspiciousUserAgent(userAgent) {
-    const suspiciousPatterns = [
-        /bot|curl|wget|scraper|spider|crawler/i,
-        /python|java|php|node|go-http/i,
-        /^Mozilla\/5.0 \(compatible; ?\)$/,
-        /^$/,
-        /unknown|test|fake/i
-    ];
-    
-    return suspiciousPatterns.some(pattern => pattern.test(userAgent));
-}
-
-// ✅ INCREMENTAR SCORE DE FRAUDE
-function incrementFraudScore(ip, reason) {
-    if (!fraudDetectionDB.has(ip)) {
-        fraudDetectionDB.set(ip, { score: 1, reasons: [reason], firstSeen: Date.now() });
-    } else {
-        const fraudData = fraudDetectionDB.get(ip);
-        fraudData.score++;
-        fraudData.reasons.push(reason);
-        
-        // Se score muito alto, banir IP
-        if (fraudData.score >= CONFIG.FRAUD_THRESHOLD * 2) {
-            console.log(`🚨 IP BANNED: ${ip} - Score: ${fraudData.score}`);
-        }
-    }
-}
-
-// ✅ GERAR KEY SEGURA
 function generateSecureKey(ip, userAgent) {
     const key = crypto.randomBytes(16).toString('hex').toUpperCase();
     const expiresAt = Date.now() + (CONFIG.KEY_EXPIRY_HOURS * 60 * 60 * 1000);
     
-    // Salvar key no database
     verificationDB.set(key, {
         ip: ip,
         userAgent: userAgent,
@@ -216,59 +187,26 @@ function generateSecureKey(ip, userAgent) {
         isValid: true
     });
     
-    return {
-        key: key,
-        expiresAt: expiresAt,
-        createdAt: Date.now()
-    };
+    return { key, expiresAt };
 }
 
-// ✅ ATUALIZAR ATIVIDADE DO USUÁRIO
 function updateUserActivity(ip, key) {
     if (!userActivityDB.has(ip)) {
         userActivityDB.set(ip, { attempts: [], keys: [] });
     }
-    
     const userData = userActivityDB.get(ip);
     userData.keys.push(key);
-    
-    // Manter apenas últimas 10 keys
-    if (userData.keys.length > 10) {
-        userData.keys = userData.keys.slice(-10);
-    }
 }
 
-// ✅ LOG DE TENTATIVA DE FRAUDE
 async function logFraudAttempt(ip, reason, queryParams) {
-    console.log(`🚫 FRAUD ATTEMPT: ${ip} - ${reason}`);
-    
+    console.log(`🚫 FRAUD: ${ip} - ${reason}`);
     await sendToDiscord({
-        title: "🚫 Fraud Attempt Blocked",
-        description: `**IP:** ${ip}\n**Reason:** ${reason}\n**Params:** ${JSON.stringify(queryParams)}\n**Time:** ${new Date().toLocaleString()}`,
+        title: "🚫 Fraud Blocked",
+        description: `**IP:** ${ip}\n**Reason:** ${reason}\n**Time:** ${new Date().toLocaleString()}`,
         color: 16711680
     });
 }
 
-// ✅ ENVIAR ALERTA DE VERIFICAÇÃO
-async function sendVerificationAlert(ip, keyData, queryParams) {
-    await sendToDiscord({
-        title: "✅ Key Generated Successfully",
-        description: `**Key:** ||${keyData.key}||\n**IP:** ${ip}\n**Platform:** ${queryParams.source || 'Direct'}\n**Expires:** ${new Date(keyData.expiresAt).toLocaleString()}`,
-        color: 65280
-    });
-}
-
-// ✅ RESPOSTA DE BLOQUEIO
-function sendBlockResponse(res, reason) {
-    res.status(403).json({
-        success: false,
-        error: 'ACCESS_DENIED',
-        message: `Security violation detected: ${reason}`,
-        code: 'ANTI_FRAUD_BLOCK'
-    });
-}
-
-// ✅ WEBHOOK DISCORD
 async function sendToDiscord(embedData) {
     try {
         await fetch("https://discord.com/api/webhooks/1426304674595737734/Ii0NoDtSTbdLeQP-SZ4xwgc4m99mrOXTrPv_o2Wugqmg0nuM5fOLw9x1llRca4D5QCUH", {
@@ -278,7 +216,7 @@ async function sendToDiscord(embedData) {
                 embeds: [{
                     ...embedData,
                     timestamp: new Date().toISOString(),
-                    footer: { text: "BoostKey Anti-Fraud System" }
+                    footer: { text: "MultiHub Key System" }
                 }]
             })
         });
@@ -287,7 +225,6 @@ async function sendToDiscord(embedData) {
     }
 }
 
-// ✅ FUNÇÃO PARA VALIDAR KEY (usada por outros sistemas)
 export function validateKey(key) {
     if (!verificationDB.has(key)) {
         return { valid: false, reason: 'Key not found' };
@@ -304,9 +241,7 @@ export function validateKey(key) {
         return { valid: false, reason: 'Key expired' };
     }
     
-    // Incrementar uso
     keyData.uses++;
-    
     return {
         valid: true,
         data: {
@@ -318,29 +253,23 @@ export function validateKey(key) {
     };
 }
 
-// ✅ LIMPEZA AUTOMÁTICA
+// Limpeza automática
 setInterval(() => {
     const now = Date.now();
-    let cleanedKeys = 0;
-    let cleanedIPs = 0;
+    let cleaned = 0;
     
-    // Limpar keys expiradas
     for (const [key, data] of verificationDB.entries()) {
         if (now > data.expiresAt) {
             verificationDB.delete(key);
-            cleanedKeys++;
+            cleaned++;
         }
     }
     
-    // Limpar IPs antigos
-    for (const [ip, data] of fraudDetectionDB.entries()) {
-        if (now - data.firstSeen > 7 * 24 * 60 * 60 * 1000) { // 7 dias
-            fraudDetectionDB.delete(ip);
-            cleanedIPs++;
+    for (const [ip, data] of pendingVerifications.entries()) {
+        if (now - data.startedAt > CONFIG.VERIFICATION_TIMEOUT) {
+            pendingVerifications.delete(ip);
         }
     }
     
-    if (cleanedKeys > 0 || cleanedIPs > 0) {
-        console.log(`🧹 Cleaned ${cleanedKeys} expired keys and ${cleanedIPs} old IPs`);
-    }
-}, 60 * 60 * 1000); // A cada hora
+    if (cleaned > 0) console.log(`🧹 Cleaned ${cleaned} expired keys`);
+}, 60 * 60 * 1000);

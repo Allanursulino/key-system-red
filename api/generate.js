@@ -15,12 +15,10 @@ export default async function handler(req, res) {
         if (!key) {
             return res.status(400).json({
                 success: false,
-                error: 'KEY_REQUIRED',
-                message: 'Key parameter is required'
+                error: 'KEY_REQUIRED'
             });
         }
 
-        // ✅ VALIDAR KEY
         const validation = validateKey(key);
         
         if (!validation.valid) {
@@ -31,8 +29,6 @@ export default async function handler(req, res) {
             });
         }
 
-        // ✅ KEY VÁLIDA - Retornar sucesso
-        res.setHeader('Content-Type', 'application/json');
         res.status(200).json({
             success: true,
             message: 'Key is valid',
@@ -44,7 +40,6 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('❌ Generate API error:', error);
         res.status(500).json({
             success: false,
             error: 'SYSTEM_ERROR'

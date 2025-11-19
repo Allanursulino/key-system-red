@@ -1,11 +1,8 @@
 {
-  "name": "key-system-red",
+  "name": "multihub-key",
   "version": "1.0.0",
-  "description": "Temporary key system with Discord webhook",
+  "description": "MultiHub Key System with Anti-Fraud",
   "type": "module",
-  "dependencies": {
-    "node-fetch": "^3.3.2"
-  },
   "engines": {
     "node": "22.x"
   }

@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sua Key • BoostKey System</title>
+    <title>Your Key • MultiHub Key</title>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <style>
         body {
             margin: 0;
-            background: #0f172a;
+            background: #0a0a0a;
             color: #fff;
             font-family: 'Inter', sans-serif;
             overflow: hidden;
@@ -18,7 +18,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            background: linear-gradient(135deg, #000000 0%, #1a0000 100%);
         }
         
         .key-container {
@@ -31,7 +31,7 @@
         .key-box {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(99, 102, 241, 0.3);
+            border: 1px solid rgba(255, 0, 72, 0.3);
             border-radius: 20px;
             padding: 50px;
             margin: 0 auto;
@@ -41,7 +41,7 @@
         .key-title {
             font-size: 2.5rem;
             margin-bottom: 20px;
-            background: linear-gradient(45deg, #6366f1, #10b981);
+            background: linear-gradient(45deg, #ff0048, #ff3366);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -54,7 +54,7 @@
             padding: 25px;
             margin: 30px 0;
             border-radius: 15px;
-            border: 2px solid #6366f1;
+            border: 2px solid #ff0048;
             font-family: 'Courier New', monospace;
             word-break: break-all;
         }
@@ -66,7 +66,7 @@
         }
         
         .copy-btn {
-            background: linear-gradient(45deg, #6366f1, #4f46e5);
+            background: linear-gradient(45deg, #ff0048, #cc0037);
             color: white;
             border: none;
             padding: 18px 50px;
@@ -80,13 +80,13 @@
         
         .copy-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 15px 35px rgba(255, 0, 72, 0.3);
         }
         
         .security-badge {
             display: inline-block;
-            background: rgba(16, 185, 129, 0.2);
-            color: #10b981;
+            background: rgba(255, 0, 72, 0.2);
+            color: #ff0048;
             padding: 10px 20px;
             border-radius: 25px;
             margin: 20px 0;
@@ -95,8 +95,26 @@
         
         .countdown {
             font-size: 1.1rem;
-            color: #f59e0b;
+            color: #ff9900;
             margin: 15px 0;
+        }
+        
+        .back-btn {
+            background: transparent;
+            border: 2px solid #ff0048;
+            color: #ff0048;
+            padding: 12px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 15px;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #ff0048;
+            color: white;
         }
     </style>
 </head>
@@ -106,32 +124,33 @@
     <div class="key-container">
         <div class="key-box">
             <div class="key-title">
-                <i class="fas fa-key"></i> SUA KEY 24H
+                <i class="fas fa-key"></i> YOUR 24H KEY
             </div>
             <div class="key-info">
-                Key gerada via verificação segura • Válida por 24 horas
+                Key generated via secure verification • Valid for 24 hours
             </div>
             
-            <div id="key">🔄 Gerando sua key...</div>
+            <div id="key">🔄 Generating your key...</div>
             
             <div class="countdown" id="countdown">
-                ⏰ Expira em: <span id="timer">24:00:00</span>
+                ⏰ Expires in: <span id="timer">24:00:00</span>
             </div>
             
             <button class="copy-btn" onclick="copyKey()">
-                <i class="fas fa-copy"></i> COPIAR KEY
+                <i class="fas fa-copy"></i> COPY KEY
             </button>
             
             <div class="security-badge">
-                <i class="fas fa-shield-alt"></i> Protegido por Sistema Anti-Fraude
+                <i class="fas fa-shield-alt"></i> Protected by Anti-Fraud System
             </div>
             
-            <div style="margin-top: 30px; color: #64748b; font-size: 0.9rem;">
-                🔄 Para uma nova key após 24h, repita o processo de verificação
-            </div>
+            <a href="/" class="back-btn">
+                <i class="fas fa-arrow-left"></i> BACK TO HOME
+            </a>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <script>
         let currentKey = '';
         let expiryTime = 0;
@@ -139,14 +158,14 @@
         particlesJS("particles-js", {
             particles: {
                 number: { value: 60, density: { enable: true, value_area: 800 } },
-                color: { value: "#6366f1" },
+                color: { value: "#ff0048" },
                 shape: { type: "circle" },
                 opacity: { value: 0.3, random: true },
                 size: { value: 3, random: true },
                 line_linked: {
                     enable: true,
                     distance: 150,
-                    color: "#6366f1",
+                    color: "#ff0048",
                     opacity: 0.2,
                     width: 1
                 },
@@ -162,9 +181,7 @@
         async function generateKey() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const source = urlParams.get('source') || 'direct';
-                
-                const response = await fetch(`/api/verify?verified=true&source=${source}&timestamp=${Date.now()}`);
+                const response = await fetch(`/api/verify?verified=true&platform=lootlabs&timestamp=${Date.now()}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -174,10 +191,10 @@
                     document.getElementById('key').textContent = currentKey;
                     startCountdown();
                 } else {
-                    showError(data.message || 'Falha na verificação');
+                    showError(data.message || 'Verification failed');
                 }
             } catch (error) {
-                showError('Erro de conexão. Tente novamente.');
+                showError('Connection error. Please try again.');
             }
         }
 
@@ -187,8 +204,8 @@
                 const timeLeft = expiryTime - now;
                 
                 if (timeLeft <= 0) {
-                    document.getElementById('timer').textContent = 'EXPIRADA';
-                    document.getElementById('timer').style.color = '#ef4444';
+                    document.getElementById('timer').textContent = 'EXPIRED';
+                    document.getElementById('timer').style.color = '#ff4444';
                     return;
                 }
                 
@@ -207,19 +224,19 @@
         function copyKey() {
             if (currentKey) {
                 navigator.clipboard.writeText(currentKey).then(() => {
-                    alert('✅ Key copiada para a área de transferência!');
+                    alert('✅ Key copied to clipboard!');
                 });
             } else {
-                alert('⏳ Aguarde a key ser gerada...');
+                alert('⏳ Please wait for key generation...');
             }
         }
 
         function showError(message) {
             document.getElementById('key').innerHTML = `❌ ${message}`;
-            document.getElementById('key').style.color = '#ef4444';
+            document.getElementById('key').style.color = '#ff4444';
         }
 
-        // Iniciar geração da key
+        // Start key generation
         generateKey();
     </script>
 </body>
