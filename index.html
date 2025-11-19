@@ -3,85 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>24H KEY • SECURE VERIFICATION</title>
+  <title>24H KEY • CODE VERIFICATION</title>
   <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
   <style>
     body {margin:0;background:#000;color:#ff0048;font-family:'Courier New',monospace;overflow:hidden;}
     #particles-js {position:absolute;width:100%;height:100%;background:#000;}
     .container {position:relative;z-index:2;text-align:center;padding-top:15vh;}
     h1 {font-size:45px;text-shadow:0 0 20px #ff0048;margin-bottom:20px;}
-    .verification-steps {margin:30px auto;max-width:600px;background:rgba(255,0,72,0.1);padding:25px;border-radius:15px;border:2px solid #ff0048;}
-    .step {margin:20px 0;padding:20px;background:rgba(0,0,0,0.5);border-radius:10px;border-left:4px solid #ff0048;text-align:left;}
-    .step-number {font-weight:bold;color:#fff;font-size:20px;margin-right:10px;}
-    button {padding:18px 50px;font-size:22px;background:#ff0048;color:#000;border:none;border-radius:12px;cursor:pointer;transition:0.3s;margin:15px;font-weight:bold;}
+    .verification-box {margin:30px auto;max-width:500px;background:rgba(255,0,72,0.1);padding:25px;border-radius:15px;border:2px solid #ff0048;}
+    .step {margin:15px 0;padding:15px;background:rgba(0,0,0,0.5);border-radius:10px;border-left:4px solid #ff0048;}
+    button {padding:15px 40px;font-size:20px;background:#ff0048;color:#000;border:none;border-radius:10px;cursor:pointer;transition:0.3s;margin:10px;font-weight:bold;}
     button:hover {background:#ff3366;transform:scale(1.05);}
-    .lootlabs-btn {background:#ff0048;display:block;width:300px;margin:25px auto;}
-    .manual-btn {background:#00ff48;color:#000;display:block;width:250px;margin:15px auto;}
-    .security-info {color:#ff6699;margin:20px 0;font-size:16px;}
+    #approvalCode {font-size:24px;font-weight:bold;color:#00ff48;margin:15px;padding:10px;background:rgba(0,0,0,0.7);border-radius:8px;}
+    .instructions {color:#ff6699;margin:15px 0;font-size:14px;}
   </style>
 </head>
 <body>
   <div id="particles-js"></div>
   <div class="container">
     <h1>🔐 24H SECURE KEY</h1>
-    <p>Complete LootLabs verification to get your key</p>
+    <p>Get your temporary key with secure verification</p>
     
-    <div class="verification-steps">
-      <h3>🔒 SECURE VERIFICATION PROCESS:</h3>
+    <div class="verification-box">
+      <h3>🔒 VERIFICATION PROCESS</h3>
       
       <div class="step">
-        <span class="step-number">1.</span>
-        <strong>Click the LootLabs Button</strong><br>
-        You'll be redirected to complete verification tasks
+        <strong>1. GET VERIFICATION CODE</strong><br>
+        Click the button below to generate your unique code
       </div>
       
-      <div class="step">
-        <span class="step-number">2.</span>
-        <strong>Complete Required Tasks</strong><br>
-        Follow/Join the required platforms on LootLabs
+      <div id="codeSection" style="display:none;">
+        <div class="step">
+          <strong>2. YOUR VERIFICATION CODE:</strong><br>
+          <div id="approvalCode">Loading...</div>
+          <div class="instructions">This code expires in 30 minutes</div>
+        </div>
+        
+        <div class="step">
+          <strong>3. COMPLETE LOOTLABS VERIFICATION</strong><br>
+          <button onclick="goToLootLabs()">🚀 GO TO LOOTLABS</button>
+        </div>
+        
+        <div class="step">
+          <strong>4. GET YOUR KEY</strong><br>
+          <button onclick="getKey()" style="background:#00ff48;">✅ GET MY KEY NOW</button>
+          <div class="instructions">Click after completing LootLabs tasks</div>
+        </div>
       </div>
       
-      <div class="step">
-        <span class="step-number">3.</span>
-        <strong>Automatic Key Generation</strong><br>
-        After verification, you'll get your 24-hour key instantly
-      </div>
+      <button id="startBtn" onclick="startVerification()">🎯 START VERIFICATION</button>
     </div>
 
-    <!-- BOTÃO PRINCIPAL PARA LOOTLABS -->
-    <button class="lootlabs-btn" onclick="startVerification()">
-      🚀 START LOOTLABS VERIFICATION
-    </button>
-
-    <div class="security-info">
-      🔒 <strong>Security Notice:</strong> Direct access to key generation is blocked.<br>
-      ✅ You MUST complete LootLabs verification to receive your key.
+    <div style="color:#ff9900;margin-top:20px;">
+      ⚠️ <strong>SECURITY:</strong> Each code works only once and expires in 30 minutes
     </div>
   </div>
 
   <script>
-    // Gerar session token único
-    function generateSessionToken() {
-      return 'session_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+    let currentApprovalCode = '';
+    let currentRedirectUrl = '';
+
+    async function startVerification() {
+      try {
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('startBtn').innerText = '🔄 Generating Code...';
+        
+        const response = await fetch('/api/approve');
+        const data = await response.json();
+        
+        if (data.success) {
+          currentApprovalCode = data.approvalCode;
+          currentRedirectUrl = data.redirectUrl;
+          
+          document.getElementById('approvalCode').textContent = currentApprovalCode;
+          document.getElementById('codeSection').style.display = 'block';
+          document.getElementById('startBtn').style.display = 'none';
+          
+          console.log('✅ Approval code generated:', currentApprovalCode);
+        } else {
+          alert('Error generating code. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+      }
     }
 
-    function startVerification() {
-      const sessionToken = generateSessionToken();
+    function goToLootLabs() {
+      if (currentRedirectUrl) {
+        window.open(currentRedirectUrl, '_blank');
+      } else {
+        alert('Please generate a verification code first.');
+      }
+    }
+
+    async function getKey() {
+      if (!currentApprovalCode) {
+        alert('Please generate a verification code first.');
+        return;
+      }
       
-      // Salvar session token no localStorage
-      localStorage.setItem('verificationSession', sessionToken);
-      localStorage.setItem('sessionStart', Date.now().toString());
-      
-      console.log('🔐 Session token generated:', sessionToken);
-      
-      // ✅ REDIRECIONAR PARA LOOTLABS COM SESSION TOKEN
-      // SUBSTITUA PELO SEU LINK REAL DO LOOTLABS
-      const lootLabsUrl = `https://loot-link.com/s?fdFLWci2`;
-      
-      window.open(lootLabsUrl, '_blank');
-      
-      // Mostrar instruções
-      alert('✅ Verification started! Complete the tasks on LootLabs and you will be automatically redirected to get your key.');
+      // Validar código antes de gerar key
+      try {
+        const validateResponse = await fetch('/api/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: currentApprovalCode })
+        });
+        
+        const validateData = await validateResponse.json();
+        
+        if (validateData.success) {
+          // Redirecionar para página da key com código válido
+          window.location.href = `/key?code=${currentApprovalCode}`;
+        } else {
+          alert('Verification failed. Please restart the process.');
+        }
+      } catch (error) {
+        alert('Network error. Please try again.');
+      }
     }
 
     particlesJS("particles-js", {
@@ -104,13 +144,6 @@
           direction: "none",
           random: true,
           out_mode: "out"
-        }
-      },
-      interactivity: {
-        detect_on: "canvas",
-        events: { 
-          onhover: { enable: true, mode: "repulse" },
-          onclick: { enable: true, mode: "push" }
         }
       }
     });
