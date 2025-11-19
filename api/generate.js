@@ -15,7 +15,8 @@ export default async function handler(req, res) {
         if (!key) {
             return res.status(400).json({
                 success: false,
-                error: 'KEY_REQUIRED'
+                error: 'KEY_REQUIRED',
+                message: 'Key is required'
             });
         }
 
@@ -34,14 +35,16 @@ export default async function handler(req, res) {
             message: 'Key valid',
             data: {
                 expiresAt: validation.data.expiresAt,
-                uses: validation.data.uses
+                uses: validation.data.uses,
+                createdAt: validation.data.createdAt
             }
         });
 
     } catch (error) {
         res.status(500).json({
             success: false,
-            error: 'SYSTEM_ERROR'
+            error: 'SYSTEM_ERROR',
+            message: error.message
         });
     }
 }
