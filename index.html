@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MultiHub • Key System 2025</title>
+    <title>MultiHub Key • LootLabs System 2025</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #10b981;
-            --danger: #ef4444;
+            --primary: #dc2626;
+            --primary-dark: #b91c1c;
+            --secondary: #ef4444;
+            --danger: #dc2626;
             --warning: #f59e0b;
             --dark: #1f2937;
             --darker: #111827;
@@ -36,7 +36,7 @@
             position: fixed;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, var(--darker) 0%, #1e1b4b 100%);
+            background: linear-gradient(135deg, var(--darker) 0%, #450a0a 100%);
             z-index: -1;
         }
         
@@ -219,7 +219,7 @@
         
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 15px 35px rgba(220, 38, 38, 0.3);
         }
         
         .btn-primary:disabled {
@@ -230,8 +230,8 @@
         
         /* System Rules */
         .system-rules {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
             border-radius: 15px;
             padding: 25px;
             margin: 30px 0;
@@ -329,7 +329,7 @@
         
         .security-badge {
             background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             border-radius: 10px;
             padding: 15px;
             text-align: center;
@@ -369,8 +369,8 @@
     <div class="container">
         <header>
             <div class="logo">
-                <i class="fas fa-shield-alt"></i>
-                BoostKey
+                <i class="fas fa-key"></i>
+                MultiHub Key
             </div>
             <nav class="nav-links">
                 <a href="#"><i class="fas fa-home"></i> Home</a>
@@ -448,7 +448,7 @@
                     <i class="fas fa-exclamation-triangle"></i> Anti-Fraud System Active
                 </div>
                 <ul class="rules-list">
-                    <li>Maximum 1 active keys per IP</li>
+                    <li>Maximum 1 active key per IP</li>
                     <li>30 minute cooldown between verifications</li>
                     <li>Keys expire in 24 hours automatically</li>
                     <li>LootLabs verification required</li>
@@ -477,7 +477,7 @@
         </div>
         
         <footer>
-            <p>&copy; 2025 BoostKey System. Protected by LootLabs verification + Anti-Fraud.</p>
+            <p>&copy; 2025 MultiHub Key System. Protected by LootLabs verification + Anti-Fraud.</p>
             <p style="margin-top: 10px; font-size: 0.9rem;">
                 <i class="fas fa-shield-alt"></i> Exclusive LootLabs System - 100% functional
             </p>
@@ -485,21 +485,21 @@
     </div>
 
     <script>
-        // ✅ LOOTLABS CONFIGURATION - REPLACE WITH YOUR LINK!
-        const LOOTLABS_URL = 'https://lootdest.org/s?bXNC2Iiz';
+        // ✅ LOOTLABS CONFIGURATION - USING YOUR EXISTING LINK
+        const LOOTLABS_URL = 'https://loot-link.com/s?irN3pVRa';
         
-        // Particles.js
+        // Particles.js with red theme
         particlesJS("particles-js", {
             particles: {
                 number: { value: 80, density: { enable: true, value_area: 800 } },
-                color: { value: "#6366f1" },
+                color: { value: "#dc2626" },
                 shape: { type: "circle" },
                 opacity: { value: 0.3, random: true },
                 size: { value: 3, random: true },
                 line_linked: {
                     enable: true,
                     distance: 150,
-                    color: "#6366f1",
+                    color: "#dc2626",
                     opacity: 0.2,
                     width: 1
                 },
@@ -576,7 +576,7 @@
                         document.getElementById('totalKeys').textContent = data.data.totalKeys.toLocaleString();
                         document.getElementById('activeUsers').textContent = data.data.activeUsers.toLocaleString();
                         document.getElementById('blockedAttempts').textContent = data.data.blockedIPs.toLocaleString();
-                        document.getElementById('successRate').textContent = data.data.successRate + '%';
+                        document.getElementById('successRate').textContent = data.data.successRate;
                     }
                 } catch (error) {
                     console.log('Error loading statistics');

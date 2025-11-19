@@ -1,7 +1,7 @@
 {
-  "name": "key-system-red",
+  "name": "multihub-key-system",
   "version": "1.0.0",
-  "description": "Sistema de keys com anti-fraude LootLabs",
+  "description": "Key system with LootLabs anti-fraud",
   "type": "module",
   "engines": {
     "node": "22.x"

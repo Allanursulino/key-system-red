@@ -5,13 +5,13 @@ const verificationDB = new Map();
 const userActivityDB = new Map();
 const fraudDetectionDB = new Map();
 
-// Configurações
+// Configurações ATUALIZADAS - APENAS 1 KEY POR IP
 const CONFIG = {
-    MAX_KEYS_PER_IP: 1,
+    MAX_KEYS_PER_IP: 1, // MUDADO DE 3 PARA 1
     KEY_EXPIRY_HOURS: 24,
     COOLDOWN_MINUTES: 30,
-    MAX_ATTEMPTS_PER_HOUR: 10,
-    FRAUD_THRESHOLD: 5
+    MAX_ATTEMPTS_PER_HOUR: 5,
+    FRAUD_THRESHOLD: 3
 };
 
 export default async function handler(req, res) {
@@ -45,9 +45,22 @@ export default async function handler(req, res) {
             });
         }
 
-        // ✅ GERAR KEY
+        // ✅ VERIFICAR SE JÁ EXISTE KEY ATIVA PARA ESTE IP
+        const existingKey = await getActiveKeyForIP(clientIP);
+        if (existingKey) {
+            console.log('ℹ️ Returning existing key for IP:', clientIP);
+            return res.status(200).json({
+                success: true,
+                key: existingKey.key,
+                expiresAt: existingKey.expiresAt,
+                expiresIn: '24 hours',
+                existing: true
+            });
+        }
+
+        // ✅ GERAR NOVA KEY
         const keyData = generateSecureKey(clientIP, userAgent);
-        console.log('✅ KEY GENERATED:', keyData.key);
+        console.log('✅ NEW KEY GENERATED:', keyData.key);
 
         // ✅ ATUALIZAR ESTATÍSTICAS
         updateUserActivity(clientIP, keyData.key);
@@ -57,7 +70,8 @@ export default async function handler(req, res) {
             success: true,
             key: keyData.key,
             expiresAt: keyData.expiresAt,
-            expiresIn: '24 hours'
+            expiresIn: '24 hours',
+            existing: false
         });
 
     } catch (error) {
@@ -69,7 +83,28 @@ export default async function handler(req, res) {
     }
 }
 
-// Funções anti-fraude (manter as que já tinha)
+// ✅ NOVA FUNÇÃO: Buscar key ativa existente para o IP
+async function getActiveKeyForIP(ip) {
+    if (!userActivityDB.has(ip)) return null;
+    
+    const userData = userActivityDB.get(ip);
+    const now = Date.now();
+    
+    // Procurar por keys ativas deste IP
+    for (const key of userData.keys) {
+        if (verificationDB.has(key)) {
+            const keyData = verificationDB.get(key);
+            if (keyData.expiresAt > now && keyData.isValid) {
+                return {
+                    key: key,
+                    expiresAt: keyData.expiresAt
+                };
+            }
+        }
+    }
+    return null;
+}
+
 async function performFraudCheck(ip, userAgent, referer, queryParams) {
     const checks = {
         ipNotBanned: !fraudDetectionDB.has(ip) || fraudDetectionDB.get(ip).score < CONFIG.FRAUD_THRESHOLD,
@@ -141,10 +176,18 @@ function updateUserActivity(ip, key) {
     }
     const userData = userActivityDB.get(ip);
     userData.keys.push(key);
+    userData.attempts.push(Date.now());
 }
 
 async function logFraudAttempt(ip, reason, queryParams) {
     console.log(`🚫 FRAUD: ${ip} - ${reason}`);
+    if (!fraudDetectionDB.has(ip)) {
+        fraudDetectionDB.set(ip, { score: 1, lastAttempt: Date.now() });
+    } else {
+        const fraudData = fraudDetectionDB.get(ip);
+        fraudData.score++;
+        fraudData.lastAttempt = Date.now();
+    }
 }
 
 // Export para outras APIs
